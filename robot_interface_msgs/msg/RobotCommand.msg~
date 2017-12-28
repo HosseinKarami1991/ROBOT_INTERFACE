@@ -1,0 +1,9 @@
+string CommandType # Simulation/Real
+string Action
+string[] ActionParametersName
+string[] ActionParameterInfo
+string[] ResponsibleAgents
+string[] ColleagueAgents
+bool success
+float64 time
+Joints[] ArmsJoint # last moment simulation arm joints value
