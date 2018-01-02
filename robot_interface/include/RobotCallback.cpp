@@ -213,7 +213,11 @@ num_joint=7;
 	knowledgeBase_client =nh.serviceClient<knowledge_msgs::knowledgeSRV>("knowledgeService");
 	publishControlCommand=nh.advertise<controlCommnad_msgs::control>("robot_control_command",80);
 
+
 	simRobot_client = nh.serviceClient<simRobot_msgs::simulateRobotSRV>("robotSimulator_service");
+	sub_arrivingSimulationCommand=nh.subscribe("simulation_command",10, &robotCallback::arrivingSimulationCommand, this);
+	pub_simulationResponse=nh.advertise<robot_interface_msgs::SimulationResponseMsg>("simulation_response",80);
+
 	waiting_time=20.0;
 	SetAgentsList();
 }
@@ -578,6 +582,233 @@ void robotCallback::SubscribeControlAck(const controlCommnad_msgs::controlGoalRe
 
 
 }
+
+void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::arrivingSimulationCommand"<<endl;
+	// arrive the simulation command here
+	// base on the arriving command call different functions
+	string tempActionName=msg.ActionName;
+	if(tempActionName=="Grasp"|| tempActionName=="UnGrasp")
+		SimulateGraspingCommand(msg);
+	else if(tempActionName=="Stop")
+		SimulateStoppingCommand(msg);
+	else if(tempActionName=="HoldOn")
+		SimulateHoldingCommand(msg);
+	else if(tempActionName=="Approach")
+		SimulateApproachingCommand(msg);
+	else if(tempActionName=="UpdateJointValues")
+		SimulateUpdateJointValues(msg);
+	else
+	{
+		cout<<"The arriving msg name is wrong: "<<tempActionName <<endl;
+	}
+}
+
+void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg){
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=0.0;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for (int i=0;i<msg.ResponsibleAgents.size();i++)
+	{
+		if(msg.ResponsibleAgents[i]=="LeftArm")
+		{
+			for(int i=0;i<7;i++)
+				tempJoint.values.push_back(init_q_[0][i]);
+			tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		}
+		else if(msg.ResponsibleAgents[i]=="RightArm")
+		{
+			for(int i=0;i<7;i++)
+				tempJoint.values.push_back(init_q_[1][i]);
+			tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		}
+		else
+		{
+			cout<<"Error in arriving Msg, agent name: "<<msg.ResponsibleAgents[i]<<endl;
+		}
+	}
+
+	pub_simulationResponse.publish(tempResponseMsg);
+}
+
+void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=0.8;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
+void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=0.01;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
+void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=0.01;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+
+
+};
+void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+
+	if(msg.ResponsibleAgents.size()==1)
+		SimulateApproachingCommandSingleArm(msg);
+	else if (msg.ResponsibleAgents.size()==2)
+		SimulateApproachingCommandJointArms(msg);
+	else
+		cout<<"Error in agent number"<<endl;
+};
+void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::SimulateApproachingCommandSingleArm"<<endl;
+	// check the input msg and call the knowledge base for information we need for simulation
+	//call the simulation service, wait for response and publish the result to the controller
+
+	//
+	vector<string> msgAction;
+	int agentNumber;
+
+	if(msg.ResponsibleAgents.size()==1)
+	{
+		if(msg.ResponsibleAgents[0]=="LeftArm")
+			agentNumber=0;
+		else if(msg.ResponsibleAgents[0]=="RightArm")
+			agentNumber=1;
+		else
+			cout<<"Error in agent name: "<<msg.ResponsibleAgents[0]<<endl;
+	}
+	else
+	{	cout<<"The agent sizes is not defined in this function!"<<endl;
+		return;
+	}
+
+	string actionParameters= msg.ActionParametersName[0]; // point-5, Object1-graspingPose1, Object4-XPose3, check later [0]!
+	vector<string> actionParametersVec;
+	boost::split(actionParametersVec,actionParameters, boost::is_any_of("-"));// Approach-point-5
+
+	vector<float> goalPose;
+	int goalSize;
+
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	knowledge_msg.request.reqType=actionParametersVec[0];
+	knowledge_msg.request.Name=actionParametersVec[1];
+	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0];// check later
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+
+		for (int i=0;i<goalSize;i++){
+			goalPose.push_back(knowledge_msg.response.pose[i]);
+		}
+
+	}
+	vector<float> initialJointPose, finalJointPose;
+	double actionTime=0;
+	bool simulationResult;
+	for(int i=0;i<msg.ArmsJoint[agentNumber].values.size();i++)
+		initialJointPose.push_back(msg.ArmsJoint[agentNumber].values[i]);
+
+	SimulateRobotSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
+
+
+
+
+};
+
+void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
+	cout<<"robotCallback::SimulateRobotSingleArm"<<endl;
+
+//	bool simulationResult;
+	simRobot_msgs::simulateRobotSRV simRobot_srv;
+	simRobot_msgs::transformation simRobot_pose;
+
+
+	simRobot_srv.request.simRobot.Activation=1;
+	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
+	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
+	for (int j=0;j<goalPose.size();j++){
+		simRobot_pose.cartesianPosition[j]=goalPose[j];
+	}
+	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
+	for (int i=0;i<num_joint;i++)
+		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=init_q_[armIndex][i];
+
+	if (simRobot_client.call(simRobot_srv))
+	{
+		simulationResult=simRobot_srv.response.simResponse;
+		// add the action Time here,
+		// add the final joint Pose here
+
+		if (simulationResult)
+			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+		else
+			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+	}
+
+//	return simulationResult;
+};
+
+void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
+
+
+
+
+};
+
+
 
 void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	// MSG: "[action] [agents who should perform] [collaborators]"
@@ -949,7 +1180,6 @@ void robotCallback::SendGraspingCommand(agents_tasks& agent){
 void robotCallback::SendHoldingCommand(agents_tasks& agent){
 	cout<<"robotCallback::sendHoldingCommand"<<endl;
 
-
 	control_msg.Activation=4;
 	control_msg.holdModeArm.arm=agent.agentsNumber;
 	control_msg.holdModeArm.holdingmode=1; // hold on=1, hold off=0
@@ -987,7 +1217,6 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	   5- base on the flag: give command to the controller
 
 	 */
-
 	agent.Print();
 	bool simulationResult;
 
@@ -1047,7 +1276,7 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	if(simulationFlag==true)
 	{
 
-		simulationResult=SimulateRobotSingleArm(agent.agentsNumber, goalPose);
+		//simulationResult=SimulateRobotSingleArm(agent.agentsNumber, goalPose);
 		if(simulationResult==true)
 			controllerFlag=true;
 		else
@@ -1083,35 +1312,7 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 
 };
 
-bool robotCallback::SimulateRobotSingleArm(int armIndex, vector<float> goalPose){
-	cout<<"robotCallback::SimulateRobotSingleArm"<<endl;
 
-	bool simulationResult;
-	simRobot_msgs::simulateRobotSRV simRobot_srv;
-	simRobot_msgs::transformation simRobot_pose;
-
-	simRobot_srv.request.simRobot.Activation=1;
-	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
-	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
-	for (int j=0;j<goalPose.size();j++){
-		simRobot_pose.cartesianPosition[j]=goalPose[j];
-	}
-	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
-	for (int i=0;i<num_joint;i++)
-		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=init_q_[armIndex][i];
-
-	if (simRobot_client.call(simRobot_srv))
-	{
-		simulationResult=simRobot_srv.response.simResponse;
-
-		if (simulationResult)
-			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
-		else
-			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
-	}
-
-	return simulationResult;
-};
 
 void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	cout<<"robotCallback::SendApproachingCommandJointArms"<<endl;

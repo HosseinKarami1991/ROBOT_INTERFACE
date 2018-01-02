@@ -27,9 +27,14 @@
 #include "controlCommnad_msgs/control.h"
 #include "Objects.hpp"
 #include "knowledge_msgs/knowledgeSRV.h"
+// from robot interface to the simulation module
 #include <simRobot_msgs/simulateRobotSRV.h>
 #include <simRobot_msgs/sim_robot.h>
 #include <simRobot_msgs/transformation.h>
+// from the planner to the robot interface
+#include "robot_interface_msgs/Joints.h"
+#include "robot_interface_msgs/SimulationRequestMsg.h"
+#include "robot_interface_msgs/SimulationResponseMsg.h"
 
 
 #define RST  "\x1B[0m"
@@ -193,6 +198,7 @@ class robotCallback {
 		void publishControlTasksParam(void);
 
 		void arrivingCommands(const std_msgs::String::ConstPtr& msg); //! this method take care of arriving command from higher level (our case: hri pkg)
+		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		Ecmnd string2enum(string);
 		void pointReturn(int pointNumber,double * pointPose);
 
@@ -207,7 +213,17 @@ class robotCallback {
 		void SendApproachingCommand(agents_tasks& agent);
 		void SendApproachingCommandSingleArm(agents_tasks& agent);
 		void SendApproachingCommandJointArms(agents_tasks& agent);
-		bool SimulateRobotSingleArm(int armIndex, vector<float> goalPose);
+
+		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
+
+
+		void SimulateRobotSingleArm(int armIndex, vector<float> initialPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
 		bool SimulateRobotJointArms(vector<int> armIndex, vector<float> wTo ,vector<float> wTg);
 		void StopRobotEmergency(agents_tasks& agent);
 
@@ -228,9 +244,14 @@ class robotCallback {
 
 		ros::Subscriber sub_robotCtrlAck;
 		ros::Subscriber sub_CtrlOut;
+
 		ros::Subscriber sub_arrivingCmnd; //! command from higher level to manage
+		ros::Subscriber sub_arrivingSimulationCommand;
+
 		ros::Publisher pub_ctrl_task_param;
 		ros::Publisher pub_hri_robot_ack;
+		ros::Publisher pub_simulationResponse;
+
 
 		ros::ServiceClient knowledgeBase_client;
 		ros::ServiceClient simRobot_client;
