@@ -216,15 +216,18 @@ class robotCallback {
 
 		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateUpdateKnowledgeBase(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
 
-
-		void SimulateRobotSingleArm(int armIndex, vector<float> initialPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
-		bool SimulateRobotJointArms(vector<int> armIndex, vector<float> wTo ,vector<float> wTg);
+		void SimulateRobotSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
+		void SimulateRobotJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose );
 		void StopRobotEmergency(agents_tasks& agent);
 
 		void FailureCheck(void);
