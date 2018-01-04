@@ -607,6 +607,7 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 }
 
 void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::SimulateUpdateJointValues"<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -639,10 +640,10 @@ void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::Simula
 }
 
 void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-
+	cout<<"robotCallback::SimulateGraspingCommand"<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
-	tempResponseMsg.success=true;
+	tempResponseMsg.success=1;
 	tempResponseMsg.time=0.8;//sec
 	tempResponseMsg.ActionName=msg.ActionName;
 	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
@@ -652,6 +653,7 @@ void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::Simulati
 	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
 
+	tempJoint.values.clear();
 	for(int i=0;i<7;i++)
 	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
@@ -660,6 +662,7 @@ void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::Simulati
 
 };
 void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::SimulateHoldingCommand"<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -680,6 +683,7 @@ void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::Simulatio
 
 };
 void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::SimulateStoppingCommand"<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -702,7 +706,7 @@ void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::Simulati
 
 };
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-
+	cout<<"robotCallback::SimulateApproachingCommand"<<endl;
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateApproachingCommandSingleArm(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -712,6 +716,7 @@ void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::Simul
 };
 void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<"robotCallback::SimulateApproachingCommandSingleArm"<<endl;
+
 	// check the input msg and call the knowledge base for information we need for simulation
 	//call the simulation service, wait for response and publish the result to the controller
 	vector<string> msgAction;
@@ -760,6 +765,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	}
 
 	vector<float> initialJointPose, finalJointPose;
+	finalJointPose.resize(num_joint,0.0);
 	double actionTime=0;
 	bool simulationResult;
 	for(int i=0;i<msg.ArmsJoint[agentNumber].values.size();i++)
@@ -809,27 +815,31 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
 	cout<<"robotCallback::SimulateRobotSingleArm"<<endl;
 
-//	bool simulationResult;
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
 	simRobot_msgs::transformation simRobot_pose;
 
-
+	cout<<"2001"<<endl;
 	simRobot_srv.request.simRobot.Activation=1;
 	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
 	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
-	for (int j=0;j<goalPose.size();j++){
+
+	for (int j=0;j<goalPose.size();j++)
+	{
 		simRobot_pose.cartesianPosition[j]=goalPose[j];
 	}
+	cout<<"2002"<<endl;
+
 	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
 	for (int i=0;i<num_joint;i++)
 		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=initialJointPose[i];
-
+	cout<<"2003"<<endl;
 	if (simRobot_client.call(simRobot_srv))
 	{
-		simulationResult=simRobot_srv.response.simResponse;
+		cout<<"2004"<<endl;
+		simulationResult=(bool)simRobot_srv.response.simResponse;
 		// add the action Time here,
 		// add the final joint Pose here
-
+		cout<<"2005"<<endl;
 		for(int i=0;i<num_joint;i++)
 			if (armIndex==0)
 				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm1[i];
@@ -837,13 +847,15 @@ void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJoi
 				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm2[i];
 			else
 				cout<<"Error in arm Index"<<endl;
+		cout<<"2006"<<endl;
 
-		actionTime=simRobot_srv.response.time;
+		actionTime=(double)simRobot_srv.response.time;
 
 		if (simulationResult)
 			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
 		else
 			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+
 	}
 
 //	return simulationResult;
@@ -856,6 +868,7 @@ void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_ms
 
 };
 void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<"robotCallback::SimulateTransportingCommand"<<endl;
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateTransportingCommand(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -1058,11 +1071,6 @@ void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<f
 			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
 	}
 };
-
-
-
-
-
 
 void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	// MSG: "[action] [agents who should perform] [collaborators]"
