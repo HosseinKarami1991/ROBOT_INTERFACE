@@ -198,7 +198,7 @@ class robotCallback {
 		void publishControlTasksParam(void);
 
 		void arrivingCommands(const std_msgs::String::ConstPtr& msg); //! this method take care of arriving command from higher level (our case: hri pkg)
-		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+
 		Ecmnd string2enum(string);
 		void pointReturn(int pointNumber,double * pointPose);
 
@@ -214,6 +214,8 @@ class robotCallback {
 		void SendApproachingCommandSingleArm(agents_tasks& agent);
 		void SendApproachingCommandJointArms(agents_tasks& agent);
 
+
+		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateKnowledgeBase(const robot_interface_msgs::SimulationRequestMsg& msg);
@@ -254,6 +256,7 @@ class robotCallback {
 		ros::Publisher pub_ctrl_task_param;
 		ros::Publisher pub_hri_robot_ack;
 		ros::Publisher pub_simulationResponse;
+		ros::Publisher pub_RobotJointValues;
 
 
 		ros::ServiceClient knowledgeBase_client;
