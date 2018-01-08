@@ -742,7 +742,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 
 	string actionParameters= msg.ActionParametersName[0]; //Approach [-]: point-5, Object1-graspingPose1, Object4-XPose3, check later [0]!
 	vector<string> actionParametersVec;
-	boost::split(actionParametersVec,actionParameters, boost::is_any_of("-"));// Approach-point-5
+	boost::split(actionParametersVec,actionParameters, boost::is_any_of("-"));// point-5 [ Approach_point-5]
 
 	vector<float> goalPose;
 	int goalSize;
@@ -755,14 +755,20 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	knowledge_msg.request.Name=actionParametersVec[1];
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0];// check later
 
-	if(knowledgeBase_client.call(knowledge_msg)){
-
+	if(knowledgeBase_client.call(knowledge_msg))
+	{
 		goalSize=knowledge_msg.response.pose.size();
 
-		for (int i=0;i<goalSize;i++){
+		for (int i=0;i<goalSize;i++)
+		{
 			goalPose.push_back(knowledge_msg.response.pose[i]);
 		}
 	}
+
+	cout<<actionParameters<<" pose: ";
+	for (int i=0;i<goalPose.size();i++)
+		cout<<goalPose[i]<<" ";
+	cout<<endl;
 
 	vector<float> initialJointPose, finalJointPose;
 	finalJointPose.resize(num_joint,0.0);
@@ -813,7 +819,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 };
 
 void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
-	cout<<"robotCallback::SimulateRobotSingleArm"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
 
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
 	simRobot_msgs::transformation simRobot_pose;
@@ -862,13 +868,13 @@ void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJoi
 };
 
 void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateApproachingCommandJointArms"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandJointArms"))<<endl;
 	cout<<"Not implemented yet, and probably not necessary totally"<<endl;
 
 
 };
 void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateTransportingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommand"))<<endl;
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateTransportingCommand(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -878,12 +884,12 @@ void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::Simu
 
 };
 void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateTransportingCommandSingleArm"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandSingleArm"))<<endl;
 	cout<<"Not Implemented Yet"<<endl;
 
 };
 void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SendApproachingCommandJointArms"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandJointArms"))<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -979,6 +985,15 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	initialJointPose.push_back(leftArmJoints);
 	initialJointPose.push_back(rightArmJoints);
 
+	cout<<"initial q (left): ";
+	for(int i=0;i<initialJointPose[0].size();i++)
+		cout<<initialJointPose[0][i]<<" ";
+	cout<<endl;
+
+	cout<<"initial q (right): ";
+	for(int i=0;i<initialJointPose[1].size();i++)
+		cout<<initialJointPose[1][i]<<" ";
+	cout<<endl;
 
 	bool simulationResult;
 	double  actionTime;
@@ -1022,7 +1037,7 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 };
 
 void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose ){
-	cout<<"robotCallback::SimulateRobotJointArms"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateRobotJointArms"))<<endl;
 
 //	bool simulationResult;
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1038,9 +1053,9 @@ void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<f
 
 
 	for (int j=0;j<num_joint;j++)
-		simRobot_srv.request.simRobot.sim_biman_arm.jointsInit_arm1.jointPosition[j]=init_q_[armIndex[0]][j];
+		simRobot_srv.request.simRobot.sim_biman_arm.jointsInit_arm1.jointPosition[j]=initialJointPose[armIndex[0]][j];
 	for (int j=0;j<num_joint;j++)
-		simRobot_srv.request.simRobot.sim_biman_arm.jointsInit_arm2.jointPosition[j]=init_q_[armIndex[1]][j];
+		simRobot_srv.request.simRobot.sim_biman_arm.jointsInit_arm2.jointPosition[j]=initialJointPose[armIndex[1]][j];
 
 
 	for (int j=0;j<wTg.size();j++)
@@ -1060,7 +1075,7 @@ void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<f
 		for(int i=0;i<num_joint;i++)
 		{
 			leftArmJoints.push_back(simRobot_srv.response.jointsfinal_arm1[i]);
-			leftArmJoints.push_back(simRobot_srv.response.jointsfinal_arm2[i]);
+			rightArmJoints.push_back(simRobot_srv.response.jointsfinal_arm2[i]);
 		}
 		finalJointPose.push_back(leftArmJoints);
 		finalJointPose.push_back(rightArmJoints);
@@ -1075,7 +1090,7 @@ void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<f
 void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	// MSG: "[action] [agents who should perform] [collaborators]"
 	// Example:  Approach-Point-11_LeftArm+RightArm_Human
-	cout<<"robotCallback::arrivingCommands"<<endl;
+	cout<<BOLD(FBLU("robotCallback::arrivingCommands"))<<endl;
 
 	string input=input1-> data.c_str();
 	ROS_INFO("Arrived robot command: %s",input.c_str());
@@ -1086,7 +1101,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	cout<<"101"<<endl;
 	boost::split(msg, input, boost::is_any_of(" "));
 	cout<<"101-1"<<endl;
-	boost::split(msgAction, msg[0], boost::is_any_of("-"));
+	boost::split(msgAction, msg[0], boost::is_any_of("_"));
 	cout<<"101-2"<<endl;
 
 	boost::split(msgAgents, msg[1], boost::is_any_of("+"));
@@ -1156,7 +1171,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	//******************************************************
 	// find the correct function for each action
 
-	if(msgAction[0]=="Approach")
+	if(msgAction[0]=="Approach"|| msgAction[0]=="Transport")
 	{
 
 		SendApproachingCommand(agents_list[agentNumber]);
@@ -1360,7 +1375,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 
 Ecmnd robotCallback::string2enum(string msg){
 	//e_pointReach, e_stop, e_holdOn, e_holdOff, e_obstacle
-	cout<<"robotCallback::string2enum: MSG: "<<msg<<endl;
+	cout<<BOLD(FBLU("robotCallback::string2enum: MSG: "))<<msg<<endl;
 	if(msg=="Grasp")							return e_grasp;
 	else if(msg=="UnGrasp") 					return e_unGrasp;
 	else if(msg=="Approach")  					return e_pointReach;
@@ -1374,7 +1389,7 @@ Ecmnd robotCallback::string2enum(string msg){
 }
 
 void robotCallback::PublishRobotAck(agents_tasks& agent){
-	cout<<"robotCallback::PublishRobotAck"<<endl;
+	cout<<BOLD(FBLU("robotCallback::PublishRobotAck"))<<endl;
 
 	std_msgs::String ackMsg;
 	cout<<agent.lastAssignedAction<<endl;
@@ -1423,7 +1438,7 @@ void robotCallback::SetAgentsList(){
 
 
 void robotCallback::SendGraspingCommand(agents_tasks& agent){
-	cout<<"robotCallback::sendGraspingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::sendGraspingCommand"))<<endl;
 
 	agent.Print();
 
@@ -1440,7 +1455,7 @@ void robotCallback::SendGraspingCommand(agents_tasks& agent){
 
 };
 void robotCallback::SendHoldingCommand(agents_tasks& agent){
-	cout<<"robotCallback::sendHoldingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::sendHoldingCommand"))<<endl;
 
 	control_msg.Activation=4;
 	control_msg.holdModeArm.arm=agent.agentsNumber;
@@ -1449,7 +1464,7 @@ void robotCallback::SendHoldingCommand(agents_tasks& agent){
 
 };
 void robotCallback::SendStoppingCommand(agents_tasks& agent){
-	cout<<"robotCallback::sendStoppingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::sendStoppingCommand"))<<endl;
 
 	agent.Print();
 
@@ -1460,7 +1475,7 @@ void robotCallback::SendStoppingCommand(agents_tasks& agent){
 };
 
 void robotCallback::SendApproachingCommand(agents_tasks& agent){
-	cout<<"robotCallback::SendApproachingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SendApproachingCommand"))<<endl;
 
 	if(agent.agentsNumber==0 || agent.agentsNumber==1)
 		SendApproachingCommandSingleArm(agent);
@@ -1471,7 +1486,7 @@ void robotCallback::SendApproachingCommand(agents_tasks& agent){
 };
 
 void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
-	cout<<"robotCallback::SendApproachingCommandSingleArm"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandSingleArm"))<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -1483,16 +1498,17 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	bool simulationResult;
 
 	//! parse the input command
-	vector<string> msgAction;
-	boost::split(msgAction,agent.lastAssignedAction, boost::is_any_of("-"));// Approach-point-5
+	vector<string> msgAction, msgParameters;
+	boost::split(msgAction,agent.lastAssignedAction, boost::is_any_of("_"));// Approach_point-5
+	boost::split(msgParameters, msgAction[1], boost::is_any_of("-"));// Approach_point-5
 	vector<float> goalPose;
 	int goalSize;
 
 	//! call the knowledge base
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
-	knowledge_msg.request.reqType=msgAction[1];
-	knowledge_msg.request.Name=msgAction[2];
+	knowledge_msg.request.reqType=msgParameters[0];
+	knowledge_msg.request.Name=msgParameters[1];
 	knowledge_msg.request.requestInfo="graspPose";
 
 	if(knowledgeBase_client.call(knowledge_msg)){
@@ -1575,7 +1591,7 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 
 
 void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
-	cout<<"robotCallback::SendApproachingCommandJointArms"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandJointArms"))<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -1587,8 +1603,9 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	bool simulationResult;
 
 	//! parse the input command
-	vector<string> msgAction;
-	boost::split(msgAction,agent.lastAssignedAction, boost::is_any_of("-"));// Approach-point-5
+	vector<string> msgAction, msgParameters;
+	boost::split( msgAction, agent.lastAssignedAction, boost::is_any_of("_"));// Approach_point-5
+	boost::split( msgParameters, msgAction[1], boost::is_any_of("-"));// Approach_point-5
 	vector<float> wTo,wTg;
 	vector<int> armIndex;
 	armIndex.push_back(0);
@@ -1598,11 +1615,13 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	//! call the knowledge base
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
-	knowledge_msg.request.reqType=msgAction[1];
-	knowledge_msg.request.Name=msgAction[2];
+	cout<<msgParameters[0]<<" "<<msgParameters[1]<<endl;
+	knowledge_msg.request.reqType=msgParameters[0];
+	knowledge_msg.request.Name=msgParameters[1];
 	knowledge_msg.request.requestInfo="graspPose";
 
-	if(knowledgeBase_client.call(knowledge_msg)){
+	if(knowledgeBase_client.call(knowledge_msg))
+	{
 
 		vectorSize=knowledge_msg.response.pose.size();
 
@@ -1715,7 +1734,7 @@ void robotCallback::FailureCheck(void){
 };
 
 void robotCallback::StopRobotEmergency(agents_tasks& agent){
-	cout<<"robotCallback::StopRobotEmergency"<<endl;
+	cout<<BOLD(FBLU("robotCallback::StopRobotEmergency"))<<endl;
 	vector<string> msgColleagues;
 
 	agent.isBusy=true;
