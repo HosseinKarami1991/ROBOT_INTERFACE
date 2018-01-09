@@ -561,6 +561,7 @@ void robotCallback::boundBallCylinder(const TrackedShape& outShape,const int ind
 }
 
 void robotCallback::SubscribeControlAck(const controlCommnad_msgs::controlGoalReachAck& msg) {
+
 	ROS_INFO("I heard Control Ack: arm:%d, cmndType: %d",msg.armState,msg.ctrlCmndTypeAck);
 
 	int arm_index=msg.armState;
@@ -584,7 +585,7 @@ void robotCallback::SubscribeControlAck(const controlCommnad_msgs::controlGoalRe
 }
 
 void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::arrivingSimulationCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::arrivingSimulationCommand"))<<endl;
 	// arrive the simulation command here
 	// base on the arriving command call different functions
 	string tempActionName=msg.ActionName;
@@ -607,7 +608,7 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 }
 
 void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateUpdateJointValues"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateUpdateJointValues"))<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -640,7 +641,7 @@ void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::Simula
 }
 
 void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateGraspingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateGraspingCommand"))<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=1;
@@ -662,7 +663,7 @@ void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::Simulati
 
 };
 void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateHoldingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateHoldingCommand"))<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -683,7 +684,7 @@ void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::Simulatio
 
 };
 void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateStoppingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateStoppingCommand"))<<endl;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -706,7 +707,7 @@ void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::Simulati
 
 };
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateApproachingCommand"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommand"))<<endl;
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateApproachingCommandSingleArm(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -715,7 +716,7 @@ void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::Simul
 		cout<<"Error in agent number"<<endl;
 };
 void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<"robotCallback::SimulateApproachingCommandSingleArm"<<endl;
+	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandSingleArm"))<<endl;
 
 	// check the input msg and call the knowledge base for information we need for simulation
 	//call the simulation service, wait for response and publish the result to the controller
@@ -740,9 +741,9 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 		cout<<"Error in single approaching command, the parameter of the actions is more than one: "<<msg.ActionParametersName.size()<<msg.ActionParameterInfo.size()<<endl;
 	}
 
-	string actionParameters= msg.ActionParametersName[0]; //Approach [-]: point-5, Object1-graspingPose1, Object4-XPose3, check later [0]!
+	string actionParameters= msg.ActionParametersName[0]; //Approach [-]: point5, Object1-graspingPose1, Object4-XPose3
 	vector<string> actionParametersVec;
-	boost::split(actionParametersVec,actionParameters, boost::is_any_of("-"));// point-5 [ Approach_point-5]
+	boost::split(actionParametersVec,actionParameters, boost::is_any_of("-"));// point5 [ Approach_point5] Cylinder1-graspingPose1 [ Approach_Cylinder1-graspingPose1]
 
 	vector<float> goalPose;
 	int goalSize;
@@ -752,7 +753,11 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
 	knowledge_msg.request.reqType=actionParametersVec[0];
-	knowledge_msg.request.Name=actionParametersVec[1];
+	if(actionParametersVec.size()>1)
+		knowledge_msg.request.Name=actionParametersVec[1];
+	else
+		knowledge_msg.request.Name="";
+
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0];// check later
 
 	if(knowledgeBase_client.call(knowledge_msg))
@@ -902,8 +907,9 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 
 	//! parse the input command
 	vector<string> parameter1,parameter2,parameter1Info,parameter2Info;
-	boost::split(parameter1,msg.ActionParametersName[0], boost::is_any_of("-"));// Transport[objectX-Ypose] [GoalPose]
-	boost::split(parameter2,msg.ActionParametersName[1], boost::is_any_of("-"));// Transport[objectX-Ypose] [Point-5]
+	// Transport wTo wTg
+	boost::split(parameter1,msg.ActionParametersName[0], boost::is_any_of("-"));// wTo: Point3, Cylinder2-ConnectionFrame
+	boost::split(parameter2,msg.ActionParametersName[1], boost::is_any_of("-"));// wTg: Point4, Plate1_connectionFrame
 
 
 	vector<float> wTo,wTg;
@@ -916,7 +922,11 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
 	knowledge_msg.request.reqType=parameter1[0];
-	knowledge_msg.request.Name=parameter1[1];
+	if(parameter1.size()>1)
+		knowledge_msg.request.Name=parameter1[1];
+	else
+		knowledge_msg.request.Name="";
+
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0]; // objectPose
 
 	if(knowledgeBase_client.call(knowledge_msg)){
@@ -942,7 +952,12 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 
 
 	knowledge_msg.request.reqType=parameter2[0];
-	knowledge_msg.request.Name=parameter2[1];
+
+	if(parameter2.size()>1)
+		knowledge_msg.request.Name=parameter1[1];
+	else
+		knowledge_msg.request.Name="";
+
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[1]; // objectPose
 
 	if(knowledgeBase_client.call(knowledge_msg)){
@@ -999,39 +1014,34 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	double  actionTime;
 	vector<vector<float>> finalJointPose;
 
+	SimulateRobotJointArms(armIndex,initialJointPose,wTo ,wTg, simulationResult, actionTime, finalJointPose);
 
-		SimulateRobotJointArms(armIndex,initialJointPose,wTo ,wTg, simulationResult, actionTime, finalJointPose);
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
+	tempResponseMsg.success=simulationResult;
+	tempResponseMsg.time=actionTime;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
 
-
-		robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
-
-		tempResponseMsg.success=simulationResult;
-		tempResponseMsg.time=actionTime;//sec
-		tempResponseMsg.ActionName=msg.ActionName;
-
-		for(int i=0;i<msg.ResponsibleAgents.size();i++)
-			tempResponseMsg.ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
-		for(int i=0;i<msg.ActionParameterInfo.size();i++)
-			tempResponseMsg.ActionParameterInfo.push_back(msg.ActionParameterInfo[i]);
-		for(int i=0;i<msg.ActionParametersName.size();i++)
-			tempResponseMsg.ActionParametersName.push_back(msg.ActionParametersName[i]);
-		for(int i=0;i<msg.ColleagueAgents.size();i++)
-			tempResponseMsg.ColleagueAgents.push_back(msg.ColleagueAgents[i]);
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		tempResponseMsg.ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
+	for(int i=0;i<msg.ActionParameterInfo.size();i++)
+		tempResponseMsg.ActionParameterInfo.push_back(msg.ActionParameterInfo[i]);
+	for(int i=0;i<msg.ActionParametersName.size();i++)
+		tempResponseMsg.ActionParametersName.push_back(msg.ActionParametersName[i]);
+	for(int i=0;i<msg.ColleagueAgents.size();i++)
+		tempResponseMsg.ColleagueAgents.push_back(msg.ColleagueAgents[i]);
 
 
+	robot_interface_msgs::Joints leftArmJoint,rightArmJoint;
+	for(int i=0;i<7;i++)
+	{
+		leftArmJoint.values.push_back(finalJointPose[0][i]);
+		rightArmJoint.values.push_back(finalJointPose[1][i]);
+	}
+	tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
+	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
-
-		robot_interface_msgs::Joints leftArmJoint,rightArmJoint;
-		for(int i=0;i<7;i++)
-		{
-			leftArmJoint.values.push_back(finalJointPose[0][i]);
-			rightArmJoint.values.push_back(finalJointPose[1][i]);
-		}
-		tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
-		tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
-
-		pub_simulationResponse.publish(tempResponseMsg);
+	pub_simulationResponse.publish(tempResponseMsg);
 
 
 };
@@ -1393,7 +1403,7 @@ void robotCallback::PublishRobotAck(agents_tasks& agent){
 
 	std_msgs::String ackMsg;
 	cout<<agent.lastAssignedAction<<endl;
-	ackMsg.data=agent.lastAssignedAction+"_";
+	ackMsg.data=agent.lastAssignedAction+" "; // Appraoch_Point2, Grasp, Transport_Cylinder2-GraspingPose1_Point7
 
 	for(int i=0;i<agent.agents.size();i++){
 		ackMsg.data=ackMsg.data+agent.agents[i];
@@ -1401,9 +1411,9 @@ void robotCallback::PublishRobotAck(agents_tasks& agent){
 			ackMsg.data=ackMsg.data+"+";
 	}
 	if(agent.isActionSuccessfullyDone==true)
-		ackMsg.data=ackMsg.data+"_true";
+		ackMsg.data=ackMsg.data+" true";
 	else
-		ackMsg.data=ackMsg.data+"_false";
+		ackMsg.data=ackMsg.data+" false";
 
 	if (agent.emergencyFlag==false)
 		pub_hri_robot_ack.publish(ackMsg);
@@ -1499,8 +1509,8 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 
 	//! parse the input command
 	vector<string> msgAction, msgParameters;
-	boost::split(msgAction,agent.lastAssignedAction, boost::is_any_of("_"));// Approach_point-5
-	boost::split(msgParameters, msgAction[1], boost::is_any_of("-"));// Approach_point-5
+	boost::split(msgAction,agent.lastAssignedAction, boost::is_any_of("_"));// Approach_Point5, Approach_Cylinder1-graspingPose2
+	boost::split(msgParameters, msgAction[1], boost::is_any_of("-"));// Point5, Cylinder1-graspingPose2
 	vector<float> goalPose;
 	int goalSize;
 
@@ -1508,7 +1518,10 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
 	knowledge_msg.request.reqType=msgParameters[0];
-	knowledge_msg.request.Name=msgParameters[1];
+	if(msgParameters.size()>1)
+		knowledge_msg.request.Name=msgParameters[1];
+	else
+		knowledge_msg.request.Name="";
 	knowledge_msg.request.requestInfo="graspPose";
 
 	if(knowledgeBase_client.call(knowledge_msg)){
@@ -1603,9 +1616,10 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	bool simulationResult;
 
 	//! parse the input command
-	vector<string> msgAction, msgParameters;
-	boost::split( msgAction, agent.lastAssignedAction, boost::is_any_of("_"));// Approach_point-5
-	boost::split( msgParameters, msgAction[1], boost::is_any_of("-"));// Approach_point-5
+	vector<string> msgAction, msgParameters1, msgParameters2;
+	boost::split( msgAction, agent.lastAssignedAction, boost::is_any_of("_"));// Transport_point5_Point3, Transport_Cylinder1-graspingPose1_Plane1-graspingPose1,
+	boost::split( msgParameters1, msgAction[1], boost::is_any_of("-"));//
+	boost::split( msgParameters2, msgAction[2], boost::is_any_of("-"));//
 	vector<float> wTo,wTg;
 	vector<int> armIndex;
 	armIndex.push_back(0);
@@ -1613,29 +1627,58 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	int vectorSize;
 
 	//! call the knowledge base
-	knowledge_msgs::knowledgeSRV knowledge_msg;
+	knowledge_msgs::knowledgeSRV knowledge_msg1,knowledge_msg2;
 
-	cout<<msgParameters[0]<<" "<<msgParameters[1]<<endl;
-	knowledge_msg.request.reqType=msgParameters[0];
-	knowledge_msg.request.Name=msgParameters[1];
-	knowledge_msg.request.requestInfo="graspPose";
+//	cout<<msgParameters[0]<<" "<<msgParameters[1]<<endl;
+	knowledge_msg1.request.reqType=msgParameters1[0];
+	knowledge_msg2.request.reqType=msgParameters2[0];
 
-	if(knowledgeBase_client.call(knowledge_msg))
+	if(msgParameters1.size()>1)
+		knowledge_msg1.request.Name=msgParameters1[1];
+	else
+		knowledge_msg1.request.Name="";
+
+	if(msgParameters2.size()>1)
+		knowledge_msg2.request.Name=msgParameters2[1];
+	else
+		knowledge_msg2.request.Name="";
+
+
+//	knowledge_msg1.request.Name=msgParameters[1];
+
+	knowledge_msg1.request.requestInfo="graspPose";
+	knowledge_msg2.request.requestInfo="graspPose";
+
+	if(knowledgeBase_client.call(knowledge_msg1))
 	{
 
-		vectorSize=knowledge_msg.response.pose.size();
+		vectorSize=knowledge_msg1.response.pose.size();
 
-		if(vectorSize!=12)
+		if(vectorSize!=6)
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
 
 		for (int i=0;i<6;i++)
-			wTo.push_back(knowledge_msg.response.pose[i]);
+			wTo.push_back(knowledge_msg1.response.pose[i]);
+
+//		simulationFlag=true;
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	if(knowledgeBase_client.call(knowledge_msg2))
+	{
+
+		vectorSize=knowledge_msg2.response.pose.size();
+
+		if(vectorSize!=6)
+			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+
 		for (int i=6;i<12;i++)
-			wTg.push_back(knowledge_msg.response.pose[i]);
+			wTg.push_back(knowledge_msg2.response.pose[i]);
 
-
-
-		simulationFlag=true;
+//		simulationFlag=true;
 	}
 	else
 	{
