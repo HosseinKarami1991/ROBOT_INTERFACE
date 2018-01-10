@@ -588,6 +588,21 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 	cout<<BOLD(FBLU("robotCallback::arrivingSimulationCommand"))<<endl;
 	// arrive the simulation command here
 	// base on the arriving command call different functions
+	cout<<msg.ActionName<<" ";
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		cout<<msg.ResponsibleAgents[i]<<" ";
+	for(int i=0;i<msg.ColleagueAgents.size();i++)
+		cout<<msg.ColleagueAgents[i]<<" ";
+	for(int i=0;i<msg.ActionParametersName.size();i++)
+		cout<<msg.ActionParametersName[i]<<" ";
+	cout<<endl;
+	for(int i=0;i<msg.ArmsJoint.size();i++)
+	{
+		for(int j=0;j<7;j++)
+			cout<<msg.ArmsJoint[i].values[j]<<" ";
+		cout<<endl;
+	}
+
 	string tempActionName=msg.ActionName;
 	if(tempActionName=="Grasp"|| tempActionName=="UnGrasp")
 		SimulateGraspingCommand(msg);
@@ -676,6 +691,7 @@ void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::Simulatio
 	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
 
+	tempJoint.values.clear();
 	for(int i=0;i<7;i++)
 	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
@@ -697,6 +713,7 @@ void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::Simulati
 	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
 
+	tempJoint.values.clear();
 	for(int i=0;i<7;i++)
 	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
 	tempResponseMsg.ArmsJoint.push_back(tempJoint);
@@ -954,7 +971,7 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	knowledge_msg.request.reqType=parameter2[0];
 
 	if(parameter2.size()>1)
-		knowledge_msg.request.Name=parameter1[1];
+		knowledge_msg.request.Name=parameter2[1];
 	else
 		knowledge_msg.request.Name="";
 
@@ -1646,8 +1663,8 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 
 //	knowledge_msg1.request.Name=msgParameters[1];
 
-	knowledge_msg1.request.requestInfo="graspPose";
-	knowledge_msg2.request.requestInfo="graspPose";
+	knowledge_msg1.request.requestInfo="graspingPose";
+	knowledge_msg2.request.requestInfo="graspingPose";
 
 	if(knowledgeBase_client.call(knowledge_msg1))
 	{
@@ -1675,7 +1692,7 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 		if(vectorSize!=6)
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
 
-		for (int i=6;i<12;i++)
+		for (int i=0;i<6;i++)
 			wTg.push_back(knowledge_msg2.response.pose[i]);
 
 //		simulationFlag=true;
