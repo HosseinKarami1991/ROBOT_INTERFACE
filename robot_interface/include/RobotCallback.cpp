@@ -838,6 +838,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
 	pub_simulationResponse.publish(tempResponseMsg);
+//	exit(1);
 };
 
 void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
@@ -898,7 +899,7 @@ void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_ms
 void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommand"))<<endl;
 	if(msg.ResponsibleAgents.size()==1)
-		SimulateTransportingCommand(msg);
+		SimulateTransportingCommandSingleArm(msg);
 	else if (msg.ResponsibleAgents.size()==2)
 		SimulateTransportingCommandJointArms(msg);
 	else
@@ -908,6 +909,7 @@ void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::Simu
 void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandSingleArm"))<<endl;
 	cout<<"Not Implemented Yet"<<endl;
+
 
 };
 void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
@@ -1423,14 +1425,14 @@ void robotCallback::PublishRobotAck(agents_tasks& agent){
 	ackMsg.data=agent.lastAssignedAction+" "; // Appraoch_Point2, Grasp, Transport_Cylinder2-GraspingPose1_Point7
 
 	for(int i=0;i<agent.agents.size();i++){
-		ackMsg.data=ackMsg.data+agent.agents[i];
+		ackMsg.data+=agent.agents[i];
 		if(i<agent.agents.size()-1)
 			ackMsg.data=ackMsg.data+"+";
 	}
 	if(agent.isActionSuccessfullyDone==true)
-		ackMsg.data=ackMsg.data+" true";
+		ackMsg.data+=" true";
 	else
-		ackMsg.data=ackMsg.data+" false";
+		ackMsg.data+=" false";
 
 	if (agent.emergencyFlag==false)
 		pub_hri_robot_ack.publish(ackMsg);
