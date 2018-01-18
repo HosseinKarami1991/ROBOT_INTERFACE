@@ -180,8 +180,8 @@ class robotCallback {
 
 		robotCallback(int nosphere,int nocylinder,int noplane,int nocone,int nounknown);
 		~robotCallback(void);
-		void CallBackShapes(const TrackedShapes& outShapes);
-		void CallBackClusters(const ClustersOutputConstPtr& clusterObj);
+//		void CallBackShapes(const TrackedShapes& outShapes);
+//		void CallBackClusters(const ClustersOutputConstPtr& clusterObj);
 		void CallBackArmwTtLeft(const geometry_msgs::Accel& msg);
 		void CallBackArmwTtRight(const geometry_msgs::Accel& msg);
 		void CallBackArm_Q_Left (const std_msgs::Float64MultiArray& msg);
@@ -213,7 +213,7 @@ class robotCallback {
 		void SendApproachingCommand(agents_tasks& agent);
 		void SendApproachingCommandSingleArm(agents_tasks& agent);
 		void SendApproachingCommandJointArms(agents_tasks& agent);
-
+		void SendRestingCommand(agents_tasks& agent);
 
 		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
@@ -227,6 +227,7 @@ class robotCallback {
 		void SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 
 		void SimulateRobotSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
 		void SimulateRobotJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose );
@@ -240,7 +241,7 @@ class robotCallback {
 
 	private:
 		ros::NodeHandle nh;
-		ros::Subscriber sub_shapes;
+//		ros::Subscriber sub_shapes;
 
 		ros::Subscriber sub_LeftArmwTt;
 		ros::Subscriber sub_RightArmwTt;

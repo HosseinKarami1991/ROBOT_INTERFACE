@@ -199,7 +199,7 @@ num_joint=7;
 	pointReachNumber=0;
 	armsStateFlag_NotIdle[0]=false;armsStateFlag_NotIdle[1]=false;armsStateFlag_NotIdle[2]=false;
 	armstateFlag_doAction[0]=false;armstateFlag_doAction[1]=false;armstateFlag_doAction[2]=false;
-	sub_shapes			=nh.subscribe("ransac_segmentation/trackedShapes",10, &robotCallback::CallBackShapes, this);
+//	sub_shapes			=nh.subscribe("ransac_segmentation/trackedShapes",10, &robotCallback::CallBackShapes, this);
 	sub_LeftArmwTt		=nh.subscribe("wTt_leftArm"	,10,&robotCallback::CallBackArmwTtLeft, 	this);
 	sub_RightArmwTt		=nh.subscribe("wTt_rightArm",10,&robotCallback::CallBackArmwTtRight, 	this);
 	sub_LeftArmQ		=nh.subscribe("Q_leftArm"	,10,&robotCallback::CallBackArm_Q_Left,		this);
@@ -276,7 +276,7 @@ if (arm_state_no==2){
 
 
 }
-
+/*
 void robotCallback::CallBackShapes(const TrackedShapes& outShapes){
 	TrackedShape::Ptr outShape ( new TrackedShape);
 	int obj_counter=0; //! No of objects that ransac recognize and is not unknown
@@ -409,7 +409,7 @@ void robotCallback::CallBackShapes(const TrackedShapes& outShapes){
 
 	}
 	//	cout<<"===================="<<endl;
-}
+}*/
 void robotCallback::goalCenterSet(const TrackedShape& outShape,const int index){ //for grasping objects
 	if (outShape.coefficients[3]<0.05){
 //		goalID=index;
@@ -616,6 +616,8 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 		SimulateUpdateJointValues(msg);
 	else if(tempActionName=="Transport")
 		SimulateTransportingCommand(msg);
+	else if(tempActionName=="Rest")
+		SimulateRestingcommand(msg);
 	else
 	{
 		cout<<"The arriving msg name is wrong: "<<tempActionName <<endl;
@@ -720,9 +722,33 @@ void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::Simulati
 
 	pub_simulationResponse.publish(tempResponseMsg);
 
+};
+
+void robotCallback::SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulateRestingcommand"))<<endl;
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=5.0;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
 
 
 };
+
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommand"))<<endl;
 	if(msg.ResponsibleAgents.size()==1)
@@ -1205,6 +1231,11 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 
 		SendApproachingCommand(agents_list[agentNumber]);
 	}
+	if(msgAction[0]=="Rest")
+	{
+
+		SendRestingCommand(agents_list[agentNumber]);
+	}
 	else if(msgAction[0]=="Grasp" || msgAction[0]=="UnGrasp")
 	{
 		SendGraspingCommand(agents_list[agentNumber]);
@@ -1514,6 +1545,76 @@ void robotCallback::SendApproachingCommand(agents_tasks& agent){
 		cout<<"Error in agent number"<<endl;
 };
 
+void robotCallback::SendRestingCommand(agents_tasks& agent){
+	cout<<BOLD(FBLU("robotCallback::SendRestingCommand"))<<endl;
+	/* 1- Parse the assigned action
+	   2- get from the knowledge base the necessary info
+	   3- base on the flag: find the path for the robot end effector
+	   4- base on the flag: simulate the robot behavior based on the path
+	   5- base on the flag: give command to the controller
+	 */
+
+	agent.Print();
+
+	//! parse the input command
+	vector<string> msgAction, msgParameters;
+	vector<float> goalPose;
+	int goalSize;
+	if(agent.agentsNumber==0)
+		msgParameters.push_back("Point_RestingLeft");
+	else if(agent.agentsNumber==1)
+		msgParameters.push_back("Point_RestingRight");
+	else
+		cout<<"Error in agent number"<<endl;
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	knowledge_msg.request.reqType=msgParameters[0];
+	if(msgParameters.size()>1)
+		knowledge_msg.request.Name=msgParameters[1];
+	else
+		knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="Pose";
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+
+		if(goalSize==6)
+			control_msg.oneArm.armCmndType="cartPos";
+		else if(goalSize==7)
+			control_msg.oneArm.armCmndType="jointPos";
+		else
+			cout<<"Error in number of knowledge base size"<<endl;
+
+		for (int i=0;i<goalSize;i++){
+			goalPose.push_back(knowledge_msg.response.pose[i]);
+		}
+
+		simulationFlag=true;
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	cout<<"goalPose: ";
+	for (int i=0;i<goalSize;i++)
+	{
+			cout<<goalPose[i]<<" ";
+	}
+	cout<<endl;
+
+		control_msg.Activation=0;
+		control_msg.oneArm.armIndex=agent.agentsNumber;
+		control_msg.oneArm.armCmndType="jointPos";
+		for(int i=0;i<goalSize;i++)
+		control_msg.oneArm.cartGoal.jointPosition[i]=goalPose[i];
+		publishControlCommand.publish(control_msg);
+};
+
+
 void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandSingleArm"))<<endl;
 	/* 1- Parse the assigned action
@@ -1541,7 +1642,7 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 		knowledge_msg.request.Name=msgParameters[1];
 	else
 		knowledge_msg.request.Name="";
-	knowledge_msg.request.requestInfo="graspPose";
+	knowledge_msg.request.requestInfo="Pose";
 
 	if(knowledgeBase_client.call(knowledge_msg)){
 
@@ -1665,8 +1766,8 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 
 //	knowledge_msg1.request.Name=msgParameters[1];
 
-	knowledge_msg1.request.requestInfo="graspingPose";
-	knowledge_msg2.request.requestInfo="graspingPose";
+	knowledge_msg1.request.requestInfo="Pose";
+	knowledge_msg2.request.requestInfo="Pose";
 
 	if(knowledgeBase_client.call(knowledge_msg1))
 	{

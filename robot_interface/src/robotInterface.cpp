@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
 
 	float InitPose[6],obstacleBoundingBox[6],pathPlanningPoseGoal[6], graspingPoseGoal[6];
 	float GoalOrientation[3],goalRegion[3];
-	for (int i=0;i<6;i++){
+	for (int i=0;i<6;i++)
+	{
 		InitPose[i]=0.0;
 		obstacleBoundingBox[i]=0.0;
 		pathPlanningPoseGoal[i]=0.0;
