@@ -218,7 +218,7 @@ num_joint=7;
 	sub_arrivingSimulationCommand=nh.subscribe("simulation_command",10, &robotCallback::arrivingSimulationCommand, this);
 	pub_simulationResponse=nh.advertise<robot_interface_msgs::SimulationResponseMsg>("simulation_response",80);
 
-	waiting_time=20.0;
+	waiting_time=30.0;
 	SetAgentsList();
 }
 robotCallback::~robotCallback(){
@@ -1231,7 +1231,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 
 		SendApproachingCommand(agents_list[agentNumber]);
 	}
-	if(msgAction[0]=="Rest")
+	else if(msgAction[0]=="Rest")
 	{
 
 		SendRestingCommand(agents_list[agentNumber]);
