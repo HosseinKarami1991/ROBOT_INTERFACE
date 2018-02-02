@@ -795,13 +795,13 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	//! call the knowledge base
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
-	knowledge_msg.request.reqType=actionParametersVec[0];
-	if(actionParametersVec.size()>1)
-		knowledge_msg.request.Name=actionParametersVec[1];
-	else
-		knowledge_msg.request.Name="";
+	knowledge_msg.request.reqType=actionParameters;
+//	if(actionParametersVec.size()>1)
+//		knowledge_msg.request.Name=actionParametersVec[1];
+//	else
+	knowledge_msg.request.Name="";
 
-	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0];// check later
+	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0];// Pose, ...
 
 	if(knowledgeBase_client.call(knowledge_msg))
 	{
@@ -966,11 +966,11 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	//! call the knowledge base
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
-	knowledge_msg.request.reqType=parameter1[0];
-	if(parameter1.size()>1)
-		knowledge_msg.request.Name=parameter1[1];
-	else
-		knowledge_msg.request.Name="";
+	knowledge_msg.request.reqType=msg.ActionParametersName[0];
+//	if(parameter1.size()>1)
+//		knowledge_msg.request.Name=parameter1[1];
+//	else
+	knowledge_msg.request.Name="";
 
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0]; // objectPose
 
@@ -996,12 +996,12 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	cout<<endl;
 
 
-	knowledge_msg.request.reqType=parameter2[0];
+	knowledge_msg.request.reqType=msg.ActionParametersName[1];
 
-	if(parameter2.size()>1)
-		knowledge_msg.request.Name=parameter2[1];
-	else
-		knowledge_msg.request.Name="";
+//	if(parameter2.size()>1)
+//		knowledge_msg.request.Name=parameter2[1];
+//	else
+	knowledge_msg.request.Name="";
 
 	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[1]; // objectPose
 
@@ -1637,11 +1637,11 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	//! call the knowledge base
 	knowledge_msgs::knowledgeSRV knowledge_msg;
 
-	knowledge_msg.request.reqType=msgParameters[0];
-	if(msgParameters.size()>1)
-		knowledge_msg.request.Name=msgParameters[1];
-	else
-		knowledge_msg.request.Name="";
+	knowledge_msg.request.reqType=msgAction[1];
+//	if(msgParameters.size()>1)
+//		knowledge_msg.request.Name=msgParameters[1];
+//	else
+	knowledge_msg.request.Name="";
 	knowledge_msg.request.requestInfo="Pose";
 
 	if(knowledgeBase_client.call(knowledge_msg)){
@@ -1750,18 +1750,18 @@ void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
 	knowledge_msgs::knowledgeSRV knowledge_msg1,knowledge_msg2;
 
 //	cout<<msgParameters[0]<<" "<<msgParameters[1]<<endl;
-	knowledge_msg1.request.reqType=msgParameters1[0];
-	knowledge_msg2.request.reqType=msgParameters2[0];
+	knowledge_msg1.request.reqType=msgAction[1];
+	knowledge_msg2.request.reqType=msgAction[2];
 
-	if(msgParameters1.size()>1)
-		knowledge_msg1.request.Name=msgParameters1[1];
-	else
-		knowledge_msg1.request.Name="";
+//	if(msgParameters1.size()>1)
+//		knowledge_msg1.request.Name=msgParameters1[1];
+//	else
+	knowledge_msg1.request.Name="";
 
-	if(msgParameters2.size()>1)
-		knowledge_msg2.request.Name=msgParameters2[1];
-	else
-		knowledge_msg2.request.Name="";
+//	if(msgParameters2.size()>1)
+//		knowledge_msg2.request.Name=msgParameters2[1];
+//	else
+	knowledge_msg2.request.Name="";
 
 
 //	knowledge_msg1.request.Name=msgParameters[1];
