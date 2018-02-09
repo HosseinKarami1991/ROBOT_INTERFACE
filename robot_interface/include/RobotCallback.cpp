@@ -758,6 +758,7 @@ void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::Simul
 	else
 		cout<<"Error in agent number"<<endl;
 };
+
 void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandSingleArm"))<<endl;
 
@@ -825,7 +826,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	for(int i=0;i<msg.ArmsJoint[agentNumber].values.size();i++)
 		initialJointPose.push_back(msg.ArmsJoint[agentNumber].values[i]);
 
-	SimulateRobotSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
+	SimulateServiceApproachSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
 
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
@@ -867,54 +868,9 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 //	exit(1);
 };
 
-void robotCallback::SimulateRobotSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
-	cout<<BOLD(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
 
-	simRobot_msgs::simulateRobotSRV simRobot_srv;
-	simRobot_msgs::transformation simRobot_pose;
 
-	cout<<"2001"<<endl;
-	simRobot_srv.request.simRobot.Activation=1;
-	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
-	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
 
-	for (int j=0;j<goalPose.size();j++)
-	{
-		simRobot_pose.cartesianPosition[j]=goalPose[j];
-	}
-	cout<<"2002"<<endl;
-
-	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
-	for (int i=0;i<num_joint;i++)
-		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=initialJointPose[i];
-	cout<<"2003"<<endl;
-	if (simRobot_client.call(simRobot_srv))
-	{
-		cout<<"2004"<<endl;
-		simulationResult=(bool)simRobot_srv.response.simResponse;
-		// add the action Time here,
-		// add the final joint Pose here
-		cout<<"2005"<<endl;
-		for(int i=0;i<num_joint;i++)
-			if (armIndex==0)
-				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm1[i];
-			else if(armIndex==1)
-				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm2[i];
-			else
-				cout<<"Error in arm Index"<<endl;
-		cout<<"2006"<<endl;
-
-		actionTime=(double)simRobot_srv.response.time;
-
-		if (simulationResult)
-			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
-		else
-			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
-
-	}
-
-//	return simulationResult;
-};
 
 void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandJointArms"))<<endl;
@@ -934,10 +890,176 @@ void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::Simu
 };
 void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandSingleArm"))<<endl;
-	cout<<"Not Implemented Yet"<<endl;
 
+
+	//! parse the input command
+	vector<string> parameter1,parameter2,parameter1Info,parameter2Info;
+	// Transport wTo wTg
+	boost::split(parameter1,msg.ActionParametersName[0], boost::is_any_of("-"));// wTo: Point3, Cylinder2-ConnectionFrame
+	boost::split(parameter2,msg.ActionParametersName[1], boost::is_any_of("-"));// wTg: Point4, Plate-Plate1-connectionFrame
+	int agentNumber;
+
+	if(msg.ResponsibleAgents.size()==1)
+	{
+		if(msg.ResponsibleAgents[0]=="LeftArm")
+			agentNumber=0;
+		else if(msg.ResponsibleAgents[0]=="RightArm")
+			agentNumber=1;
+		else
+			cout<<"Error in agent name: "<<msg.ResponsibleAgents[0]<<endl;
+	}
+	else
+	{
+		cout<<"The agent sizes is not defined in this function!"<<endl;
+		return;
+	}
+
+
+	vector<float> wTo,wTg;
+	int vectorSize;
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	knowledge_msg.request.reqType=msg.ActionParametersName[0];
+//	if(parameter1.size()>1)
+//		knowledge_msg.request.Name=parameter1[1];
+//	else
+	knowledge_msg.request.Name="";
+
+	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[0]; // objectPose
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+		vectorSize=knowledge_msg.response.pose.size();
+		if(vectorSize!=6)
+			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+		for (int i=0;i<6;i++)
+			wTo.push_back(knowledge_msg.response.pose[i]);
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	cout<<"wTo: ";
+	for (int i=0;i<6;i++){
+			cout<<wTo[i]<<" ";
+		}
+	cout<<endl;
+
+	knowledge_msg.request.reqType=msg.ActionParametersName[1];
+
+//	if(parameter2.size()>1)
+//		knowledge_msg.request.Name=parameter2[1];
+//	else
+	knowledge_msg.request.Name="";
+
+	knowledge_msg.request.requestInfo=msg.ActionParameterInfo[1]; // objectPose
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+		vectorSize=knowledge_msg.response.pose.size();
+		if(vectorSize!=6)
+			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+
+		for (int i=0;i<6;i++)
+			wTg.push_back(knowledge_msg.response.pose[i]);
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	cout<<"wTg: ";
+	for (int i=0;i<6;i++)
+			cout<<wTg[i]<<" ";
+	cout<<endl;
+
+	//! path Planning
+	if(pathPlanningFlag==true)
+	{
+
+	}
+	else
+	{
+
+	}
+
+
+//	vector<vector<float>> initialJointPose;
+	vector<float> initialJointPose, finalJointPose;
+	vector<float> leftArmJoints,rightArmJoints;
+	for(int i=0;i<num_joint;i++)
+	{
+		leftArmJoints.push_back(msg.ArmsJoint[0].values[i]);
+		rightArmJoints.push_back(msg.ArmsJoint[1].values[i]);
+	}
+
+	if (agentNumber==0)
+		initialJointPose=leftArmJoints;
+	else if(agentNumber==1)
+		initialJointPose=rightArmJoints;
+	else
+		cout<<"Error in Arm Index"<<endl;
+	//	initialJointPose.push_back(leftArmJoints);
+//	initialJointPose.push_back(rightArmJoints);
+
+	cout<<"Arm: "<<agentNumber<<", initial q: ";
+	for(int i=0;i<initialJointPose.size();i++)
+		cout<<initialJointPose[i]<<" ";
+	cout<<endl;
+
+	bool simulationResult;
+	double  actionTime;
+
+		finalJointPose.resize(num_joint,0.0);
+
+	SimulateServiceTransportSingleArms(agentNumber,initialJointPose,wTo ,wTg, simulationResult, actionTime, finalJointPose);
+
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=simulationResult;
+	tempResponseMsg.time=actionTime;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		tempResponseMsg.ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
+	for(int i=0;i<msg.ActionParameterInfo.size();i++)
+		tempResponseMsg.ActionParameterInfo.push_back(msg.ActionParameterInfo[i]);
+	for(int i=0;i<msg.ActionParametersName.size();i++)
+		tempResponseMsg.ActionParametersName.push_back(msg.ActionParametersName[i]);
+	for(int i=0;i<msg.ColleagueAgents.size();i++)
+		tempResponseMsg.ColleagueAgents.push_back(msg.ColleagueAgents[i]);
+
+
+	robot_interface_msgs::Joints leftArmJoint,rightArmJoint;
+	if(agentNumber==0)
+	{
+		for(int i=0;i<7;i++)
+		{
+			leftArmJoint.values.push_back(finalJointPose[i]);
+			rightArmJoint.values.push_back(rightArmJoints[i]);
+		}
+
+	}
+	else if(agentNumber==1)
+	{
+		for(int i=0;i<7;i++)
+		{
+			leftArmJoint.values.push_back(leftArmJoints[i]);
+			rightArmJoint.values.push_back(finalJointPose[i]);
+		}
+	}
+	else
+	{
+		cout<<"Error in arm index: "<<agentNumber<<endl;
+	}
+	tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
+	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
 
 };
+
 void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandJointArms"))<<endl;
 	/* 1- Parse the assigned action
@@ -1059,7 +1181,7 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	double  actionTime;
 	vector<vector<float>> finalJointPose;
 
-	SimulateRobotJointArms(armIndex,initialJointPose,wTo ,wTg, simulationResult, actionTime, finalJointPose);
+	SimulateServiceTransportJointArms(armIndex,initialJointPose,wTo ,wTg, simulationResult, actionTime, finalJointPose);
 
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
@@ -1087,12 +1209,109 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
 	pub_simulationResponse.publish(tempResponseMsg);
+};
 
+void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
+	cout<<BOLD(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
+
+	simRobot_msgs::simulateRobotSRV simRobot_srv;
+	simRobot_msgs::transformation simRobot_pose;
+
+	cout<<"2001"<<endl;
+	simRobot_srv.request.simRobot.Activation=1;
+	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
+	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
+
+	for (int j=0;j<goalPose.size();j++)
+	{
+		simRobot_pose.cartesianPosition[j]=goalPose[j];
+	}
+	cout<<"2002"<<endl;
+
+	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
+	for (int i=0;i<num_joint;i++)
+		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=initialJointPose[i];
+	cout<<"2003"<<endl;
+	if (simRobot_client.call(simRobot_srv))
+	{
+		cout<<"2004"<<endl;
+		simulationResult=(bool)simRobot_srv.response.simResponse;
+		// add the action Time here,
+		// add the final joint Pose here
+		cout<<"2005"<<endl;
+		if (armIndex==0)
+			for(int i=0;i<num_joint;i++)
+				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm1[i];
+		else if(armIndex==1)
+			for(int i=0;i<num_joint;i++)
+				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm2[i];
+		else
+			cout<<"Error in arm Index"<<endl;
+
+		cout<<"2006"<<endl;
+
+		actionTime=(double)simRobot_srv.response.time;
+
+		if (simulationResult)
+			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+		else
+			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+
+	}
+
+//	return simulationResult;
+};
+
+void robotCallback::SimulateServiceTransportSingleArms(int armIndex, vector<float> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
+	cout<<BOLD(FBLU("robotCallback::SimulateServiceTransportSingleArms"))<<endl;
+
+	//	bool simulationResult;
+		simRobot_msgs::simulateRobotSRV simRobot_srv;
+		simRobot_msgs::transformation simRobot_pose;
+
+		if(armIndex>1)
+			cout<<"the arm indices is not correct"<<endl;
+
+		simRobot_srv.request.simRobot.Activation=3;
+		simRobot_srv.request.simRobot.sim_single_arm_transport.arm_Index=armIndex;
+		simRobot_srv.request.simRobot.sim_single_arm_transport.NoGoals=1;
+
+
+		for (int j=0;j<num_joint;j++)
+			simRobot_srv.request.simRobot.sim_single_arm_transport.jointsInit_arm.jointPosition[j]=initialJointPose[j];
+
+		for (int j=0;j<wTg.size();j++)
+			simRobot_pose.cartesianPosition[j]=wTg[j];
+
+		simRobot_srv.request.simRobot.sim_single_arm_transport.wTg.push_back(simRobot_pose);
+
+		for (int j=0;j<wTo.size();j++)
+			simRobot_srv.request.simRobot.sim_single_arm_transport.wTo.cartesianPosition[j]=wTo[j];
+
+
+		if (simRobot_client.call(simRobot_srv))
+		{
+			simulationResult=simRobot_srv.response.simResponse;
+			actionTime=simRobot_srv.response.time;
+			if (armIndex==0)
+				for(int i=0;i<num_joint;i++)
+					finalJointPose[i]=simRobot_srv.response.jointsfinal_arm1[i];
+			else if(armIndex==1)
+				for(int i=0;i<num_joint;i++)
+					finalJointPose[i]=simRobot_srv.response.jointsfinal_arm2[i];
+			else
+				cout<<"Error in arm Index"<<endl;
+
+			if (simulationResult)
+				cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+			else
+				cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+		}
 
 };
 
-void robotCallback::SimulateRobotJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose ){
-	cout<<BOLD(FBLU("robotCallback::SimulateRobotJointArms"))<<endl;
+void robotCallback::SimulateServiceTransportJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose ){
+	cout<<BOLD(FBLU("robotCallback::SimulateServiceTransportJointArms"))<<endl;
 
 //	bool simulationResult;
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1226,10 +1445,13 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	//******************************************************
 	// find the correct function for each action
 
-	if(msgAction[0]=="Approach"|| msgAction[0]=="Transport")
+	if(msgAction[0]=="Approach")
 	{
-
 		SendApproachingCommand(agents_list[agentNumber]);
+	}
+	else if(msgAction[0]=="Transport")
+	{
+		SendRestingCommand(agents_list[agentNumber]);
 	}
 	else if(msgAction[0]=="Rest")
 	{
@@ -1253,200 +1475,9 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 		cout<<"Error in arriving msg action:"<<msgAction[0]<<endl;
 	}
 	cout<<"105"<<endl;
-//	for(int i=0;i<agents_list.size();i++)
-//		agents_list[i].Print();
-
-
-/*
-
-	if(msgAction[0]=="")
-	{
-
-	}
-
-	knowledge_msgs::knowledgeSRV knowledge_msg;
-
-
-	if (input!="0"){
-//		ROS_INFO("sub robot command from hri: %s",input1->data.c_str());
-
-
-
-
-		cmndType=msgAction[0];
-//		if (msgAction.size()==3)
-		robotCommandType=string2enum(msgAction[0]); // we define the left, right, biman in the matrix we want to define
-
-		int arm_no=10;
-		if(msgAgents.size()==1){
-			if (msgAgents[0]=="LeftArm") 	arm_no=0;
-			if (msgAgents[0]=="RightArm")	arm_no=1;
-		}
-		else if(msgAgents.size()==2)
-		{arm_no=2;}
-		else
-		{cout<<"Error in arriving msg "<<msg[1]<<endl;}
-		//	int arm_no=std::stoi(msg[1],nullptr);	// left:0, right:1, biman:2
-//		cout<<"MSG: ";
-//		for (int i=0;i<msg.size();i++)
-//			cout<<msg[i]<<" ";
-//		cout<<endl;
-//		//	cout<<"robotCommandType: "<<robotCommandType <<endl;
-
-		if(arm_no>2 || msg.size()>3) {
-			cout<<"robotCallback::arrivingCommands->  ERROR"<<endl;
-		}
-		if (msgAction.size()==3) // Approach-point-5
-		{
-			knowledge_msg.request.reqType=msgAction[1];
-			knowledge_msg.request.Name=msgAction[2];
-
-			if(msgAction[0]=="Approach")
-				knowledge_msg.request.requestInfo="graspPose";
-			else
-			{cout<<"Error in msg arrived"<<msgAction[0]<<endl;}
-
-			if(knowledgeBase_client.call(knowledge_msg))
-			{
-				for (int i=0;i<6;i++){
-					ReachingPoint[arm_no][i]=knowledge_msg.response.pose[i];
-				}
-
-			}
-
-
-			if(arm_no==2)
-			{
-				knowledge_msg.request.reqType=msgAction[1];
-
-				reachingPoint=msgAction[2];
-				pointReachNumber=std::stoi(reachingPoint,nullptr);
-				pointReachNumber=pointReachNumber+1;
-				reachingPoint=to_string(pointReachNumber);
-
-				knowledge_msg.request.Name=reachingPoint;
-
-				if(msgAction[0]=="Approach")
-					knowledge_msg.request.requestInfo="graspPose";
-				else
-				{cout<<"Error in msg arrived"<<msgAction[0]<<endl;}
-
-				if(knowledgeBase_client.call(knowledge_msg))
-				{
-					for (int i=0;i<6;i++){
-						wTo_BiMan[i]=knowledge_msg.response.pose[i];
-					}
-				}
-			}
-
-//			for (int i=0;i<6;i++){
-//				ReachingPoint[arm_no][i]=ReachingPointsVector[pointReachNumber][i];
-//				if (arm_no==2)
-//					wTo_BiMan[i]=ReachingPointsVector[pointReachNumber+1][i];
-//			}
-
-			cout<<"arm number1: "<<arm_no<<", reaching point: "<<pointReachNumber<<": ";
-			for (int i=0;i<6;i++)
-				cout<<ReachingPoint[arm_no][i]<<" ";
-			cout<<endl;
-
-
-		}
-
-		cout<<101<<endl;
-		switch (robotCommandType){
-
-		case e_grasp:
-			controllerFlag=true;
-			if (arm_no==2){	armsStateFlag_NotIdle[0]=true;armsStateFlag_NotIdle[1]=true;}
-			else armsStateFlag_NotIdle[arm_no]=true;
-			break;
-
-		case e_unGrasp:
-			controllerFlag=true;
-			if (arm_no==2){	armsStateFlag_NotIdle[0]=true;armsStateFlag_NotIdle[1]=true;}
-			else armsStateFlag_NotIdle[arm_no]=true;
-
-			break;
-
-		case e_stop:
-			controllerFlag=true;
-			if (arm_no==2){
-				armsStateFlag_NotIdle[0]=true;armsStateFlag_NotIdle[1]=true;
-				controlCmndSent_goalNotReached[0][0]=false;	// stop robot going through the paths from here: in left situation
-				controlCmndSent_goalNotReached[1][0]=false;	// stop robot going through the paths from here: in right situation
-				controlCmndSent_goalNotReached[2][1]=false; // stop robot going through the paths from here: in BiMan situation
-			}
-			else{
-				armsStateFlag_NotIdle[arm_no]=true;
-				controlCmndSent_goalNotReached[arm_no][0]=false;
-			}
-
-			break;
-
-		case e_holdOn:
-			controllerFlag=true;
-			if (arm_no==2){	armsStateFlag_NotIdle[0]=true;armsStateFlag_NotIdle[1]=true;}
-			else armsStateFlag_NotIdle[arm_no]=true;
-
-			break;
-
-		case e_holdOff:
-			controllerFlag=true;
-			if (arm_no==2){	armsStateFlag_NotIdle[0]=true;armsStateFlag_NotIdle[1]=true;}
-			else armsStateFlag_NotIdle[arm_no]=true;
-
-			break;
-
-		case e_objectsRecognition:
-			obj_call_back_flag=true;
-
-			break;
-
-		case e_obstacleAvoidanceTask:
-			publishControlTasksParam();
-			break;
-
-		case e_pointReach:
-			controllerFlag=true;
-			directPathAllocationFalg=true;
-			// we know goal value here
-			armsStateFlag_NotIdle[arm_no]=true;
-			readArmPathFlag[arm_no]=true;
-
-			cout<<"arm number2: "<<arm_no<<", reaching point: "<<pointReachNumber<<": ";
-			for (int i=0;i<6;i++)
-				cout<<ReachingPoint[arm_no][i]<<" ";
-			cout<<endl;
-
-			break;
-
-		case e_NotResolved:
-			cout<<FRED("robotCallback::arrivingCommands==> Msg Received Not Resolved")<<endl;
-			break;
-		}
-		for (int i=0;i<NO_ArmState;i++)
-			if (armsStateFlag_NotIdle[i]==true)
-				armstateFlag_doAction[i]=true;
-	}
-	*/
 
 }
 
-Ecmnd robotCallback::string2enum(string msg){
-	//e_pointReach, e_stop, e_holdOn, e_holdOff, e_obstacle
-	cout<<BOLD(FBLU("robotCallback::string2enum: MSG: "))<<msg<<endl;
-	if(msg=="Grasp")							return e_grasp;
-	else if(msg=="UnGrasp") 					return e_unGrasp;
-	else if(msg=="Approach")  					return e_pointReach;
-	else if(msg=="stop")						return e_stop;
-	else if(msg=="holdOn") 						return e_holdOn;
-	else if(msg=="holdOff") 					return e_holdOff;
-	else if(msg=="obstacleAvoidanceTask") 		return e_obstacleAvoidanceTask;
-	else if(msg=="objectsRecognition") 			return e_objectsRecognition;
-	else										return e_NotResolved;
-
-}
 
 void robotCallback::PublishRobotAck(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::PublishRobotAck"))<<endl;
@@ -1540,7 +1571,19 @@ void robotCallback::SendApproachingCommand(agents_tasks& agent){
 	if(agent.agentsNumber==0 || agent.agentsNumber==1)
 		SendApproachingCommandSingleArm(agent);
 	else if (agent.agentsNumber==2)
-		SendApproachingCommandJointArms(agent);
+	{
+		//SendTransportingCommandJointArms(agent);
+	}
+	else
+		cout<<"Error in agent number"<<endl;
+};
+void robotCallback::SendTransportingCommand(agents_tasks& agent){
+	cout<<BOLD(FBLU("robotCallback::SendApproachingCommand"))<<endl;
+
+	if(agent.agentsNumber==0 || agent.agentsNumber==1)
+		SendTransportingCommandSingleArms(agent);
+	else if (agent.agentsNumber==2)
+		SendTransportingCommandJointArms(agent);
 	else
 		cout<<"Error in agent number"<<endl;
 };
@@ -1721,9 +1764,97 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 //	}
 };
 
+void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 
+	cout<<BOLD(FBLU("robotCallback::SendTransportingCommandSingleArms"))<<endl;
+	/* 1- Parse the assigned action
+	   2- get from the knowledge base the necessary info
+	   3- base on the flag: find the path for the robot end effector
+	   4- base on the flag: simulate the robot behavior based on the path
+	   5- base on the flag: give command to the controller
 
-void robotCallback::SendApproachingCommandJointArms(agents_tasks& agent){
+	 */
+	agent.Print();
+	bool simulationResult;
+
+	//! parse the input command
+	vector<string> msgAction, msgParameters1, msgParameters2;
+	boost::split( msgAction, agent.lastAssignedAction, boost::is_any_of("_"));// Transport_point5_Point3, Transport_Cylinder1-graspingPose1_Plane1-graspingPose1,
+	boost::split( msgParameters1, msgAction[1], boost::is_any_of("-"));//
+	boost::split( msgParameters2, msgAction[2], boost::is_any_of("-"));//
+	vector<float> wTo,wTg;
+	vector<int> armIndex;
+	armIndex.push_back(0);
+	armIndex.push_back(1);
+	int vectorSize;
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg1,knowledge_msg2;
+
+//	cout<<msgParameters[0]<<" "<<msgParameters[1]<<endl;
+	knowledge_msg1.request.reqType=msgAction[1];
+	knowledge_msg2.request.reqType=msgAction[2];
+
+	knowledge_msg1.request.Name="";
+	knowledge_msg2.request.Name="";
+	knowledge_msg1.request.requestInfo="Pose";
+	knowledge_msg2.request.requestInfo="Pose";
+
+	if(knowledgeBase_client.call(knowledge_msg1))
+	{
+		vectorSize=knowledge_msg1.response.pose.size();
+		if(vectorSize!=6)
+			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+		for (int i=0;i<6;i++)
+			wTo.push_back(knowledge_msg1.response.pose[i]);
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	if(knowledgeBase_client.call(knowledge_msg2))
+	{
+
+		vectorSize=knowledge_msg2.response.pose.size();
+
+		if(vectorSize!=6)
+			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+
+		for (int i=0;i<6;i++)
+			wTg.push_back(knowledge_msg2.response.pose[i]);
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+	}
+
+	cout<<"wTo: ";
+	for (int i=0;i<6;i++)
+		cout<<wTo[i]<<" ";
+	cout<<endl;
+
+	cout<<"wTg: ";
+	for (int i=0;i<6;i++)
+			cout<<wTg[i]<<" ";
+	cout<<endl;
+
+	//! path Planning
+	if(pathPlanningFlag==true)
+	{}
+	else
+	{}
+	control_msg.Activation=5;
+	control_msg.oneArmTransport.arm1=armIndex[0];
+	for(int i=0;i<6;i++)
+	{
+		control_msg.oneArmTransport.wTo.cartesianPosition[i]=wTo[i];
+		control_msg.oneArmTransport.wTg.cartesianPosition[i]=wTg[i];
+	}
+	publishControlCommand.publish(control_msg);
+};
+
+void robotCallback::SendTransportingCommandJointArms(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandJointArms"))<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
@@ -1910,56 +2041,3 @@ void robotCallback::StopRobotEmergency(agents_tasks& agent){
 };
 
 
-
-
-
-void robotCallback::pointReturn(int pointNumber,double * pointPose){
-	// cartPos right 2.234  0.043 -3.135 0.75  -0.384 -0.083 *0
-	// cartPos right 2.234  0.043 -3.135 0.75 -0.384 -0.156 *1
-	// cartPos right 2.234  0.043 -3.135 0.75 -0.384 -0.05 *2
-	// cartPos left -1.441 -1.555 2.977 0.75 0.08 0.21 *3
-	// cartPos right 2.464 -1.564 2.161 0.75 -0.04 0.21 *4
-	// cartPos left -1.441 -1.555 2.977 0.75 0.04 0.21 *5
-	// cartPos right 2.464 -1.564 2.161 0.75 -0.14 0.21 *6
-	// cartPos left  3.076  0.078  -3.133  0.75  0.35  -0.12 *7
-
-
-	//	action_list[11][0]	="HandOverRightPoint1";			action_list[11][3]	="jointPos right  0.756 -0.341 -0.280 0.753 0.251 1.163 0.686";
-		// cartPos right 2.234  0.043 -3.135 0.839 -0.384 -0.083
-		// cartPos right 2.234  0.043 -3.135 0.75  -0.384 -0.083 *0
-
-	//	action_list[12][0]	="HandOverRightPoint2";			action_list[12][3]	="jointPos right 0.620 -0.018 -0.069 0.267 0.115 1.328 0.749";
-		//cartPos right 2.234  0.043 -3.135 0.75 -0.384 -0.156 *1
-
-//	action_list[13][0]	="HandOverRightPoint3";			action_list[13][3]	="jointPos right  0.725 -0.391 -0.280 0.753 0.251 1.163 0.686";
-		// cartPos right 2.234  0.043 -3.135 0.75 -0.384 -0.05 *2
-
-	//	action_list[14][0]	="HandOverPoint4";				action_list[14][2]	="jointPos left -0.517 -0.137 -0.020 0.133 -1.414 1.672 -1.628";action_list[14][3]	="jointPos right +0.611 0 0 0 1.571 1.658 1.571";
-		// cartPos left -0.989 -1.414 2.726 0.75 0.083 0.319
-		// cartPos right 2.464 -1.564 2.161 0.894 -0.004 0.324
-
-		// cartPos left -1.441 -1.555 2.977 0.75 0.08 0.21 *3
-		// cartPos right 2.464 -1.564 2.161 0.75 -0.04 0.21 *4
-
-
-	//	action_list[15][0]	="HandOverLeftPoint5";			action_list[15][2]	="jointPos left -0.611 0 0 0.05 -1.571 1.658 -1.571";				action_list[15][3]	="0";
-		// cartPos left -1.441 -1.555 2.977 0.75 0.04 0.21 *5
-
-	//	action_list[16][0]	="HandOverRightPoint6";			action_list[16][3]	="jointPos right 0.419 -0.074 -0.016 0.080 1.521 1.649 1.477";
-		//  cartPos right 2.464 -1.564 2.161 0.75 -0.14 0.21 *6
-
-	//	action_list[21][0]	="HandOverLeftPoint7";			action_list[21][2]	="jointPos left -0.706 0.360 0.054 0.166 -1.490 -0.225 -1.806";	action_list[21][3]	="0";
-		// cartPos left 0.278 -1.096 -3.091 1.098 0.424 -0.165
-		// cartPos left 0.278 -1.096 -3.091 0.9 0.3 -0.15
-		// cartPos left  3.076  0.078  -3.133  0.75  0.35  -0.12 *7
-
-
-	//	action_list[20][0]	="HandOver2InitialPos";
-	// action_list[20][2]	="jointPos left -0.084 -1.006 -1.188 1.947 0.668 1.028 -0.502";
-	// action_list[20][3]	="jointPos right 0.093 -0.983 1.142 1.885 -0.591 1.042 0.53";
-		// cartPos right -2.984 0.019 3.113 0.582 -0.176 0.104
-		//cartPos left 2.852 0.050 3.102 0.578 0.182 0.105
-
-		// cartPos left 3.1 0.01 3.1 0.58 0.18 0.10
-		// cartPos right -3.1 0.01 3.1 0.58 -0.17 0.10
-};

@@ -198,12 +198,9 @@ class robotCallback {
 		void publishControlTasksParam(void);
 
 		void arrivingCommands(const std_msgs::String::ConstPtr& msg); //! this method take care of arriving command from higher level (our case: hri pkg)
-
-		Ecmnd string2enum(string);
-		void pointReturn(int pointNumber,double * pointPose);
+		void PublishRobotAck(agents_tasks& agent);//! publish robot commands are reached to the hri
 
 		void SubscribeControlAck(const controlCommnad_msgs::controlGoalReachAck& msg);
-		void PublishRobotAck(agents_tasks& agent);//! publish robot commands are reached to the hri
 
 		void SetAgentsList(void);
 
@@ -212,9 +209,12 @@ class robotCallback {
 		void SendStoppingCommand(agents_tasks& agent);
 		void SendApproachingCommand(agents_tasks& agent);
 		void SendApproachingCommandSingleArm(agents_tasks& agent);
-		void SendApproachingCommandJointArms(agents_tasks& agent);
+		void SendTransportingCommand(agents_tasks& agent);
+		void SendTransportingCommandSingleArms(agents_tasks& agent);
+		void SendTransportingCommandJointArms(agents_tasks& agent);
 		void SendRestingCommand(agents_tasks& agent);
 
+		//! Action Simulation Functions
 		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg);
@@ -229,8 +229,9 @@ class robotCallback {
 		void SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 
-		void SimulateRobotSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
-		void SimulateRobotJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose );
+		void SimulateServiceApproachSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
+		void SimulateServiceTransportSingleArms(int armIndex, vector<float> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
+		void SimulateServiceTransportJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose );
 		void StopRobotEmergency(agents_tasks& agent);
 
 		void FailureCheck(void);
