@@ -1451,7 +1451,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	}
 	else if(msgAction[0]=="Transport")
 	{
-		SendRestingCommand(agents_list[agentNumber]);
+		SendTransportingCommand(agents_list[agentNumber]);
 	}
 	else if(msgAction[0]=="Rest")
 	{
@@ -1855,7 +1855,7 @@ void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 };
 
 void robotCallback::SendTransportingCommandJointArms(agents_tasks& agent){
-	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandJointArms"))<<endl;
+	cout<<BOLD(FBLU("robotCallback::SendTransportingCommandJointArms"))<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
