@@ -618,9 +618,14 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 		SimulateTransportingCommand(msg);
 	else if(tempActionName=="Rest")
 		SimulateRestingcommand(msg);
+	else if(tempActionName=="Screw")
+		SimulateScrewingCommand(msg);
+	else if(tempActionName=="Unscrew")
+		SimulateUnscrewingCommand(msg);
 	else
 	{
 		cout<<"The arriving msg name is wrong: "<<tempActionName <<endl;
+		exit(1);
 	}
 }
 
@@ -732,21 +737,202 @@ void robotCallback::SimulateRestingcommand(const robot_interface_msgs::Simulatio
 	tempResponseMsg.time=5.0;//sec
 	tempResponseMsg.ActionName=msg.ActionName;
 	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+	vector<string> ResponsibleAgents;
+
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
+
+	//! call the knowledge base
+	vector<float> goalPose; int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	if(ResponsibleAgents.size()==1)
+	{
+		if(ResponsibleAgents[0]=="RightArm")
+			knowledge_msg.request.reqType="Point_RestingRight";
+		else if(ResponsibleAgents[0]=="LeftArm")
+			knowledge_msg.request.reqType="Point_RestingLeft";
+		else
+		{
+			cout<<"Error in name of coming responsible agent "<<endl;
+			exit(1);
+		}
+	}
+	else
+	{
+		cout<<"Error in Resting Command Responsible Agent size"<<endl;
+		exit(1);
+	}
+
+
+	knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="Pose";
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+		goalSize=knowledge_msg.response.pose.size();
+		if(goalSize==7)
+		{}
+		else
+		{
+			cout<<"Error in number of knowledge base size"<<endl;
+			exit(1);
+		}
+		for (int i=0;i<goalSize;i++){
+			goalPose.push_back(knowledge_msg.response.pose[i]);
+		}
+	}
+
 
 	robot_interface_msgs::Joints tempJoint;
-	for(int i=0;i<7;i++)
-	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
-	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	if(ResponsibleAgents[0]=="RightArm")
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		tempJoint.values.clear();
+		for(int i=0;i<7;i++)
+		tempJoint.values.push_back(goalPose[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
+	else// "LeftArm"
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(goalPose[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
 
-	tempJoint.values.clear();
-	for(int i=0;i<7;i++)
-	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
-	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		tempJoint.values.clear();
+
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
 
 	pub_simulationResponse.publish(tempResponseMsg);
 
+};
 
 
+void robotCallback::SimulateScrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulateScrewingCommand"))<<endl;
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=5.0;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+	vector<string> ResponsibleAgents;
+
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
+
+	//! call the knowledge base
+	vector<float> goalPose; int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	if(ResponsibleAgents.size()==1)
+	{
+		if(ResponsibleAgents[0]=="RightArm" || ResponsibleAgents[0]=="LeftArm")
+		{}
+		else
+		{
+			cout<<"Error in name of coming responsible agent "<<endl;
+			exit(1);
+		}
+	}
+	else
+	{
+		cout<<"Error in Resting Command Responsible Agent size"<<endl;
+		exit(1);
+	}
+
+
+	robot_interface_msgs::Joints tempJoint;
+	if(ResponsibleAgents[0]=="RightArm")
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		tempJoint.values.clear();
+		for(int i=0;i<7;i++)
+		tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+		tempJoint.values[6]=3.0;
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
+	else// "LeftArm"
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+		tempJoint.values[6]=3.0;
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+		tempJoint.values.clear();
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
+
+	pub_simulationResponse.publish(tempResponseMsg);
+};
+void  robotCallback::SimulateUnscrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulateScrewingCommand"))<<endl;
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=5.0;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+	vector<string> ResponsibleAgents;
+
+	for(int i=0;i<msg.ResponsibleAgents.size();i++)
+		ResponsibleAgents.push_back(msg.ResponsibleAgents[i]);
+
+	//! call the knowledge base
+	vector<float> goalPose; int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	if(ResponsibleAgents.size()==1)
+	{
+		if(ResponsibleAgents[0]=="RightArm" || ResponsibleAgents[0]=="LeftArm")
+		{}
+		else
+		{
+			cout<<"Error in name of coming responsible agent "<<endl;
+			exit(1);
+		}
+	}
+	else
+	{
+		cout<<"Error in Resting Command Responsible Agent size"<<endl;
+		exit(1);
+	}
+
+
+	robot_interface_msgs::Joints tempJoint;
+	if(ResponsibleAgents[0]=="RightArm")
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+		tempJoint.values.clear();
+		for(int i=0;i<7;i++)
+		tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+		tempJoint.values[6]=-3.0;
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
+	else// "LeftArm"
+	{
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+		tempJoint.values[6]=-3.0;
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+		tempJoint.values.clear();
+		for(int i=0;i<7;i++)
+			tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+		tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	}
+
+	pub_simulationResponse.publish(tempResponseMsg);
 };
 
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
@@ -932,7 +1118,11 @@ void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_m
 	if(knowledgeBase_client.call(knowledge_msg)){
 		vectorSize=knowledge_msg.response.pose.size();
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+			exit(1);
+		}
+
 		for (int i=0;i<6;i++)
 			wTo.push_back(knowledge_msg.response.pose[i]);
 	}
@@ -959,8 +1149,10 @@ void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_m
 	if(knowledgeBase_client.call(knowledge_msg)){
 		vectorSize=knowledge_msg.response.pose.size();
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
-
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTg.push_back(knowledge_msg.response.pose[i]);
 	}
@@ -1101,8 +1293,10 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 		vectorSize=knowledge_msg.response.pose.size();
 
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
-
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTo.push_back(knowledge_msg.response.pose[i]);
 	}
@@ -1131,8 +1325,10 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 
 		vectorSize=knowledge_msg.response.pose.size();
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
-
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTg.push_back(knowledge_msg.response.pose[i]);
 	}
@@ -1458,6 +1654,15 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 
 		SendRestingCommand(agents_list[agentNumber]);
 	}
+	else if(msgAction[0]=="Screw")
+	{
+
+		SendScrewingCommand(agents_list[agentNumber]);
+	}
+	else if(msgAction[0]=="Unscrew")
+	{
+		SendUnscrewingCommand(agents_list[agentNumber]);
+	}
 	else if(msgAction[0]=="Grasp" || msgAction[0]=="UnGrasp")
 	{
 		SendGraspingCommand(agents_list[agentNumber]);
@@ -1578,7 +1783,7 @@ void robotCallback::SendApproachingCommand(agents_tasks& agent){
 		cout<<"Error in agent number"<<endl;
 };
 void robotCallback::SendTransportingCommand(agents_tasks& agent){
-	cout<<BOLD(FBLU("robotCallback::SendApproachingCommand"))<<endl;
+	cout<<BOLD(FBLU("robotCallback::SendTransportingCommand"))<<endl;
 
 	if(agent.agentsNumber==0 || agent.agentsNumber==1)
 		SendTransportingCommandSingleArms(agent);
@@ -1629,7 +1834,10 @@ void robotCallback::SendRestingCommand(agents_tasks& agent){
 		else if(goalSize==7)
 			control_msg.oneArm.armCmndType="jointPos";
 		else
+		{
 			cout<<"Error in number of knowledge base size"<<endl;
+			exit(1);
+		}
 
 		for (int i=0;i<goalSize;i++){
 			goalPose.push_back(knowledge_msg.response.pose[i]);
@@ -1655,6 +1863,140 @@ void robotCallback::SendRestingCommand(agents_tasks& agent){
 		for(int i=0;i<goalSize;i++)
 		control_msg.oneArm.cartGoal.jointPosition[i]=goalPose[i];
 		publishControlCommand.publish(control_msg);
+};
+
+
+
+void robotCallback::SendScrewingCommand(agents_tasks& agent){
+	cout<<BOLD(FBLU("robotCallback::SendScrewingCommand"))<<endl;
+
+	agent.Print();
+
+	//! parse the input command
+	vector<string> msgAction, msgParameters;
+	vector<float> goalPose;
+	int goalSize;
+	if(agent.agentsNumber==0)
+		msgParameters.push_back("LeftArm_q");
+	else if(agent.agentsNumber==1)
+		msgParameters.push_back("RightArm_q");
+	else
+		cout<<"Error in agent number"<<endl;
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	knowledge_msg.request.reqType=msgParameters[0];
+	if(msgParameters.size()>1)
+		knowledge_msg.request.Name=msgParameters[1];
+	else
+		knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="Pose";
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+
+		if(goalSize==6)
+			control_msg.oneArm.armCmndType="cartPos";
+		else if(goalSize==7)
+			control_msg.oneArm.armCmndType="jointPos";
+		else
+		{
+			cout<<"Error in number of knowledge base size"<<endl;
+			exit(1);
+		}
+
+		for (int i=0;i<goalSize;i++){
+			goalPose.push_back(knowledge_msg.response.pose[i]);
+		}
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+		exit(1);
+	}
+	goalPose[6]=3.0;
+	cout<<"goalPose: ";
+	for (int i=0;i<goalSize;i++)
+	{
+			cout<<goalPose[i]<<" ";
+	}
+	cout<<endl;
+
+		control_msg.Activation=0;
+		control_msg.oneArm.armIndex=agent.agentsNumber;
+		control_msg.oneArm.armCmndType="jointPos";
+		for(int i=0;i<goalSize;i++)
+		control_msg.oneArm.cartGoal.jointPosition[i]=goalPose[i];
+		publishControlCommand.publish(control_msg);
+
+};
+void robotCallback::SendUnscrewingCommand(agents_tasks& agent){
+	cout<<BOLD(FBLU("robotCallback::SendUnscrewingCommand"))<<endl;
+
+	agent.Print();
+
+	//! parse the input command
+	vector<string> msgAction, msgParameters;
+	vector<float> goalPose;
+	int goalSize;
+	if(agent.agentsNumber==0)
+		msgParameters.push_back("LeftArm_q");
+	else if(agent.agentsNumber==1)
+		msgParameters.push_back("RightArm_q");
+	else
+		cout<<"Error in agent number"<<endl;
+
+	//! call the knowledge base
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+
+	knowledge_msg.request.reqType=msgParameters[0];
+	if(msgParameters.size()>1)
+		knowledge_msg.request.Name=msgParameters[1];
+	else
+		knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="Pose";
+
+	if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+
+		if(goalSize==6)
+			control_msg.oneArm.armCmndType="cartPos";
+		else if(goalSize==7)
+			control_msg.oneArm.armCmndType="jointPos";
+		else
+		{
+			cout<<"Error in number of knowledge base size"<<endl;
+			exit(1);
+		}
+
+		for (int i=0;i<goalSize;i++){
+			goalPose.push_back(knowledge_msg.response.pose[i]);
+		}
+	}
+	else
+	{
+		cout<<" The knowledge base does not responded"<<endl;
+		exit(1);
+	}
+	goalPose[6]=-3.0;
+	cout<<"goalPose: ";
+	for (int i=0;i<goalSize;i++)
+	{
+			cout<<goalPose[i]<<" ";
+	}
+	cout<<endl;
+
+		control_msg.Activation=0;
+		control_msg.oneArm.armIndex=agent.agentsNumber;
+		control_msg.oneArm.armCmndType="jointPos";
+		for(int i=0;i<goalSize;i++)
+		control_msg.oneArm.cartGoal.jointPosition[i]=goalPose[i];
+		publishControlCommand.publish(control_msg);
+
+
 };
 
 
@@ -1804,7 +2146,10 @@ void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 	{
 		vectorSize=knowledge_msg1.response.pose.size();
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTo.push_back(knowledge_msg1.response.pose[i]);
 	}
@@ -1819,8 +2164,10 @@ void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 		vectorSize=knowledge_msg2.response.pose.size();
 
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
-
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTg.push_back(knowledge_msg2.response.pose[i]);
 	}
@@ -1906,7 +2253,10 @@ void robotCallback::SendTransportingCommandJointArms(agents_tasks& agent){
 		vectorSize=knowledge_msg1.response.pose.size();
 
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
+			exit(1);
+		}
 
 		for (int i=0;i<6;i++)
 			wTo.push_back(knowledge_msg1.response.pose[i]);
@@ -1924,8 +2274,10 @@ void robotCallback::SendTransportingCommandJointArms(agents_tasks& agent){
 		vectorSize=knowledge_msg2.response.pose.size();
 
 		if(vectorSize!=6)
+		{
 			cout<<"Error in number of knowledge base point size for the joint action"<<endl;
-
+			exit(1);
+		}
 		for (int i=0;i<6;i++)
 			wTg.push_back(knowledge_msg2.response.pose[i]);
 

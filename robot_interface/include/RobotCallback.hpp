@@ -213,6 +213,9 @@ class robotCallback {
 		void SendTransportingCommandSingleArms(agents_tasks& agent);
 		void SendTransportingCommandJointArms(agents_tasks& agent);
 		void SendRestingCommand(agents_tasks& agent);
+		void SendScrewingCommand(agents_tasks& agent);
+		void SendUnscrewingCommand(agents_tasks& agent);
+
 
 		//! Action Simulation Functions
 		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
@@ -228,6 +231,9 @@ class robotCallback {
 		void SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateScrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateUnscrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+
 
 		void SimulateServiceApproachSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
 		void SimulateServiceTransportSingleArms(int armIndex, vector<float> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
