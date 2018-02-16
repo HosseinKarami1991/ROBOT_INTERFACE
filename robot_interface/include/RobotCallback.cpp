@@ -208,10 +208,11 @@ num_joint=7;
 	sub_robotCtrlAck	=nh.subscribe("robot_control_ack",80, &robotCallback::SubscribeControlAck, this);
 	sub_arrivingCmnd	=nh.subscribe("robot_command",10, &robotCallback::arrivingCommands, this);
 
-	pub_ctrl_task_param	 =nh.advertise<controlCommnad_msgs::controlTaskParam>("ctrl_tasks_param",80);
-	pub_hri_robot_ack	 =nh.advertise<std_msgs::String>("robot_ack",100);
-	knowledgeBase_client =nh.serviceClient<knowledge_msgs::knowledgeSRV>("knowledgeService");
-	publishControlCommand=nh.advertise<controlCommnad_msgs::control>("robot_control_command",80);
+	pub_ctrl_task_param		=nh.advertise<controlCommnad_msgs::controlTaskParam>("ctrl_tasks_param",80);
+	pub_hri_robot_ack		=nh.advertise<std_msgs::String>("robot_ack",100);
+	knowledgeBase_client	=nh.serviceClient<knowledge_msgs::knowledgeSRV>("knowledgeService");
+	publishControlCommand	=nh.advertise<controlCommnad_msgs::control>("robot_control_command",80);
+	publishKBCommand		=nh.advertise<std_msgs::String>("robot_KB_command",80);
 
 
 	simRobot_client = nh.serviceClient<simRobot_msgs::simulateRobotSRV>("robotSimulator_service");
@@ -622,6 +623,8 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 		SimulateScrewingCommand(msg);
 	else if(tempActionName=="Unscrew")
 		SimulateUnscrewingCommand(msg);
+	else if(tempActionName=="Reduce")
+		SimulateKB_ReductionCommand(msg);
 	else
 	{
 		cout<<"The arriving msg name is wrong: "<<tempActionName <<endl;
@@ -933,6 +936,29 @@ void  robotCallback::SimulateUnscrewingCommand(const robot_interface_msgs::Simul
 	}
 
 	pub_simulationResponse.publish(tempResponseMsg);
+};
+
+
+void robotCallback::SimulateKB_ReductionCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulateKB_ReductionCommand"))<<endl;
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=0.0;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+		tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+		tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
 };
 
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
@@ -1559,7 +1585,7 @@ void robotCallback::SimulateServiceTransportJointArms(vector<int> armIndex, vect
 
 void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	// MSG: "[action] [agents who should perform] [collaborators]"
-	// Example:  Approach-Point-11_LeftArm+RightArm_Human
+	// Example:  Approach-Point-11 LeftArm+RightArm Human
 	cout<<BOLD(FBLU("robotCallback::arrivingCommands"))<<endl;
 
 	string input=input1-> data.c_str();
@@ -1651,12 +1677,10 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	}
 	else if(msgAction[0]=="Rest")
 	{
-
 		SendRestingCommand(agents_list[agentNumber]);
 	}
 	else if(msgAction[0]=="Screw")
 	{
-
 		SendScrewingCommand(agents_list[agentNumber]);
 	}
 	else if(msgAction[0]=="Unscrew")
@@ -1675,11 +1699,16 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	{
 		SendHoldingCommand(agents_list[agentNumber]);
 	}
+	else if(msgAction[0]=="Reduce")
+	{
+		SendKB_ReductionCommand(agents_list[agentNumber]);
+	}
 	else
 	{
 		cout<<"Error in arriving msg action:"<<msgAction[0]<<endl;
 	}
-	cout<<"105"<<endl;
+
+
 
 }
 
@@ -1998,6 +2027,13 @@ void robotCallback::SendUnscrewingCommand(agents_tasks& agent){
 
 
 };
+
+void robotCallback::SendKB_ReductionCommand(agents_tasks& agent){
+	std_msgs::String KBmsg;
+	KBmsg.data=agent.lastAssignedAction+ " "+to_string(agent.agentsNumber);
+	publishKBCommand.publish(KBmsg); // Reduce_WS 1 Reduce_cylinder 0 ...
+};
+
 
 
 void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){

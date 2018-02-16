@@ -36,7 +36,6 @@
 #include "robot_interface_msgs/SimulationRequestMsg.h"
 #include "robot_interface_msgs/SimulationResponseMsg.h"
 
-
 #define RST  "\x1B[0m"
 #define KBLU  "\x1B[34m"
 #define KRED  "\x1B[31m"
@@ -215,6 +214,7 @@ class robotCallback {
 		void SendRestingCommand(agents_tasks& agent);
 		void SendScrewingCommand(agents_tasks& agent);
 		void SendUnscrewingCommand(agents_tasks& agent);
+		void SendKB_ReductionCommand(agents_tasks& agent);
 
 
 		//! Action Simulation Functions
@@ -233,6 +233,7 @@ class robotCallback {
 		void SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateScrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUnscrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulateKB_ReductionCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 
 
 		void SimulateServiceApproachSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
@@ -241,6 +242,7 @@ class robotCallback {
 		void StopRobotEmergency(agents_tasks& agent);
 
 		void FailureCheck(void);
+
 
 		controlCommnad_msgs::control control_msg;
 		int num_joint;
@@ -271,6 +273,7 @@ class robotCallback {
 		ros::ServiceClient simRobot_client;
 
 		ros::Publisher publishControlCommand;
+		ros::Publisher publishKBCommand;
 
 
 		microseconds microSec_time;
