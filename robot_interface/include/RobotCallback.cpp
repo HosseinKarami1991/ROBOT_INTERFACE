@@ -597,6 +597,7 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 	for(int i=0;i<msg.ActionParametersName.size();i++)
 		cout<<msg.ActionParametersName[i]<<" ";
 	cout<<endl;
+	cout<<"Arm joint values:"<<endl;
 	for(int i=0;i<msg.ArmsJoint.size();i++)
 	{
 		for(int j=0;j<7;j++)
@@ -1439,7 +1440,7 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
 	simRobot_msgs::transformation simRobot_pose;
 
-	cout<<"2001"<<endl;
+//	cout<<"2001"<<endl;
 	simRobot_srv.request.simRobot.Activation=1;
 	simRobot_srv.request.simRobot.sim_single_arm.armIndex=armIndex;
 	simRobot_srv.request.simRobot.sim_single_arm.NoGoals=1;
@@ -1448,19 +1449,19 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 	{
 		simRobot_pose.cartesianPosition[j]=goalPose[j];
 	}
-	cout<<"2002"<<endl;
+//	cout<<"2002"<<endl;
 
 	simRobot_srv.request.simRobot.sim_single_arm.cartGoal.push_back(simRobot_pose);
 	for (int i=0;i<num_joint;i++)
 		simRobot_srv.request.simRobot.sim_single_arm.jointsInit.jointPosition[i]=initialJointPose[i];
-	cout<<"2003"<<endl;
+//	cout<<"2003"<<endl;
 	if (simRobot_client.call(simRobot_srv))
 	{
-		cout<<"2004"<<endl;
+//		cout<<"2004"<<endl;
 		simulationResult=(bool)simRobot_srv.response.simResponse;
 		// add the action Time here,
 		// add the final joint Pose here
-		cout<<"2005"<<endl;
+//		cout<<"2005"<<endl;
 		if (armIndex==0)
 			for(int i=0;i<num_joint;i++)
 				finalJointPose[i]=simRobot_srv.response.jointsfinal_arm1[i];
@@ -1470,7 +1471,7 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 		else
 			cout<<"Error in arm Index"<<endl;
 
-		cout<<"2006"<<endl;
+//		cout<<"2006"<<endl;
 
 		actionTime=(double)simRobot_srv.response.time;
 
@@ -1594,14 +1595,14 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	vector<string> msg, msgAction,msgAgents,msgColleagues;
 	string cmndType, reachingPoint ;
 
-	cout<<"101"<<endl;
+//	cout<<"101"<<endl;
 	boost::split(msg, input, boost::is_any_of(" "));
-	cout<<"101-1"<<endl;
+//	cout<<"101-1"<<endl;
 	boost::split(msgAction, msg[0], boost::is_any_of("_"));
-	cout<<"101-2"<<endl;
+//	cout<<"101-2"<<endl;
 
 	boost::split(msgAgents, msg[1], boost::is_any_of("+"));
-	cout<<"101-3"<<endl;
+//	cout<<"101-3"<<endl;
 
 	if(msg.size()==3)
 	boost::split(msgColleagues, msg[2], boost::is_any_of("+"));
@@ -1609,7 +1610,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 		cout<<"Error in arriving msg size: "<<msg.size()<<input<<endl;
 
 	//! first find which agents should perform the action and assign it.
-	cout<<"102"<<endl;
+//	cout<<"102"<<endl;
 	if(msgAgents.size()==1)
 	{
 		if(msgAgents[0]=="LeftArm")
@@ -1640,20 +1641,20 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	{
 		cout<<"The agents size is not correct: "<<msgAgents.size()<<", "<<msg[1]<<endl;
 	}
-	cout<<"103: "<<agentNumber<<agents_list.size()<<endl;
+//	cout<<"103: "<<agentNumber<<agents_list.size()<<endl;
 
 	//***********************************************************
 	// fill the related agent with the action
 	if(agents_list[agentNumber].isBusy==false || msg[0]=="Stop")
 	{
-		cout<<"103-1"<<endl;
+//		cout<<"103-1"<<endl;
 
 		agents_list[agentNumber].isBusy=true;
-		cout<<"103-2"<<endl;
+//		cout<<"103-2"<<endl;
 		agents_list[agentNumber].lastAssignedAction=msg[0];
-		cout<<"103-3"<<endl;
+//		cout<<"103-3"<<endl;
 		agents_list[agentNumber].microSec_StartingTime=duration_cast< microseconds >(system_clock::now().time_since_epoch());
-		cout<<"103-4"<<endl;
+//		cout<<"103-4"<<endl;
 		agents_list[agentNumber].collaborators=msgColleagues;
 
 	}
@@ -1662,7 +1663,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 		cout<<"The agent you assigned is busy now and it can not perform a new action "<<endl;
 		// publish false to the planner for the arrived action
 	}
-	cout<<"104"<<endl;
+//	cout<<"104"<<endl;
 
 	//******************************************************
 	// find the correct function for each action
@@ -1717,7 +1718,7 @@ void robotCallback::PublishRobotAck(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::PublishRobotAck"))<<endl;
 
 	std_msgs::String ackMsg;
-	cout<<agent.lastAssignedAction<<endl;
+	cout<<"Last assigned action: "<<agent.lastAssignedAction<<endl;
 	ackMsg.data=agent.lastAssignedAction+" "; // Appraoch_Point2, Grasp, Transport_Cylinder2-GraspingPose1_Point7
 
 	for(int i=0;i<agent.agents.size();i++){
