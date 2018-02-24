@@ -1435,7 +1435,7 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 };
 
 void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
-	cout<<BOLD(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
+	cout<<(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
 
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
 	simRobot_msgs::transformation simRobot_pose;
@@ -1476,9 +1476,9 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 		actionTime=(double)simRobot_srv.response.time;
 
 		if (simulationResult)
-			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+			cout<<FGRN("**** Simulation Shoes Robot Can Follow the Given Path ****")<<endl;
 		else
-			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+			cout<<FRED("**** Simulation Shoes Robot Can NOT Follow the Given Path ****")<<endl;
 
 	}
 
@@ -1486,7 +1486,7 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 };
 
 void robotCallback::SimulateServiceTransportSingleArms(int armIndex, vector<float> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
-	cout<<BOLD(FBLU("robotCallback::SimulateServiceTransportSingleArms"))<<endl;
+	cout<<(FBLU("robotCallback::SimulateServiceTransportSingleArms"))<<endl;
 
 	//	bool simulationResult;
 		simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1526,15 +1526,16 @@ void robotCallback::SimulateServiceTransportSingleArms(int armIndex, vector<floa
 				cout<<"Error in arm Index"<<endl;
 
 			if (simulationResult)
-				cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+				cout<<FGRN("**** Simulation Shoes Robot Can Follow the Given Path ****")<<endl;
 			else
-				cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+				cout<<FRED("**** Simulation Shoes Robot Can NOT Follow the Given Path ****")<<endl;
+
 		}
 
 };
 
 void robotCallback::SimulateServiceTransportJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose ){
-	cout<<BOLD(FBLU("robotCallback::SimulateServiceTransportJointArms"))<<endl;
+	cout<<(FBLU("robotCallback::SimulateServiceTransportJointArms"))<<endl;
 
 //	bool simulationResult;
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1578,9 +1579,10 @@ void robotCallback::SimulateServiceTransportJointArms(vector<int> armIndex, vect
 		finalJointPose.push_back(rightArmJoints);
 
 		if (simulationResult)
-			cout<<"**** Simulation Shoes Robot Can Follow the Given Path ****"<<endl;
+			cout<<FGRN("**** Simulation Shoes Robot Can Follow the Given Path ****")<<endl;
 		else
-			cout<<"**** Simulation Shoes Robot Can NOT Follow the Given Path ****"<<endl;
+			cout<<FRED("**** Simulation Shoes Robot Can NOT Follow the Given Path ****")<<endl;
+
 	}
 };
 
