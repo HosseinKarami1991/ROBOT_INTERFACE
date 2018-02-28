@@ -2231,7 +2231,7 @@ void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 	else
 	{}
 	control_msg.Activation=5;
-	control_msg.oneArmTransport.arm1=armIndex[0];
+	control_msg.oneArmTransport.arm1=agent.agentsNumber;
 	for(int i=0;i<6;i++)
 	{
 		control_msg.oneArmTransport.wTo.cartesianPosition[i]=wTo[i];
