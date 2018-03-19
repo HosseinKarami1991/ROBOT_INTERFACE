@@ -963,7 +963,7 @@ void robotCallback::SimulateKB_ReductionCommand(const robot_interface_msgs::Simu
 };
 
 void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
-	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommand"))<<endl;
+//	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommand"))<<endl;
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateApproachingCommandSingleArm(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -1041,6 +1041,7 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 
 	SimulateServiceApproachSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
 
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=simulationResult;
@@ -1074,6 +1075,15 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 
 		}
 	}
+	cout<<"final q: "<<endl;
+	for(int i=0;i<7;i++)
+		cout<<leftArmJoint.values[i]<<" ";
+	cout<<endl;
+	for(int i=0;i<7;i++)
+		cout<<rightArmJoint.values[i]<<" ";
+	cout<<endl;
+
+
 	tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
 	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
@@ -1272,6 +1282,14 @@ void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_m
 	{
 		cout<<"Error in arm index: "<<agentNumber<<endl;
 	}
+	cout<<"final q: "<<endl;
+	for(int i=0;i<7;i++)
+		cout<<leftArmJoint.values[i]<<" ";
+	cout<<endl;
+	for(int i=0;i<7;i++)
+		cout<<rightArmJoint.values[i]<<" ";
+	cout<<endl;
+
 	tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
 	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
@@ -1428,6 +1446,15 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 		leftArmJoint.values.push_back(finalJointPose[0][i]);
 		rightArmJoint.values.push_back(finalJointPose[1][i]);
 	}
+
+	cout<<"final q: "<<endl;
+	for(int i=0;i<7;i++)
+		cout<<leftArmJoint.values[i]<<" ";
+	cout<<endl;
+	for(int i=0;i<7;i++)
+		cout<<rightArmJoint.values[i]<<" ";
+	cout<<endl;
+
 	tempResponseMsg.ArmsJoint.push_back(leftArmJoint);
 	tempResponseMsg.ArmsJoint.push_back(rightArmJoint);
 
