@@ -1,0 +1,7 @@
+<launch>
+  <node name="robot_display"	pkg="robot_interface"  		type="robot_display.py"  		/> <!--	output="screen" respawn="false" -->
+  <node name="robotInterface"	pkg="robot_interface"  		type="robotInterface"     args="-v"	output="screen" respawn="false" />
+</launch>
+
+
+
