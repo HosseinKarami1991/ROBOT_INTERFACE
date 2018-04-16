@@ -587,6 +587,8 @@ void robotCallback::SubscribeControlAck(const controlCommnad_msgs::controlGoalRe
 
 void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::arrivingSimulationCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	// arrive the simulation command here
 	// base on the arriving command call different functions
 	cout<<msg.ActionName<<" ";
@@ -635,6 +637,8 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 
 void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateUpdateJointValues"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -668,6 +672,8 @@ void robotCallback::SimulateUpdateJointValues(const robot_interface_msgs::Simula
 
 void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateGraspingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=1;
@@ -690,6 +696,8 @@ void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::Simulati
 };
 void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateHoldingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -712,6 +720,8 @@ void robotCallback::SimulateHoldingCommand(const robot_interface_msgs::Simulatio
 };
 void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateStoppingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -735,6 +745,8 @@ void robotCallback::SimulateStoppingCommand(const robot_interface_msgs::Simulati
 
 void robotCallback::SimulateRestingcommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateRestingcommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -818,6 +830,8 @@ void robotCallback::SimulateRestingcommand(const robot_interface_msgs::Simulatio
 
 void robotCallback::SimulateScrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateScrewingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -879,6 +893,8 @@ void robotCallback::SimulateScrewingCommand(const robot_interface_msgs::Simulati
 };
 void  robotCallback::SimulateUnscrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateScrewingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -942,6 +958,8 @@ void  robotCallback::SimulateUnscrewingCommand(const robot_interface_msgs::Simul
 
 void robotCallback::SimulateKB_ReductionCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateKB_ReductionCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
 	tempResponseMsg.success=true;
@@ -974,6 +992,7 @@ void robotCallback::SimulateApproachingCommand(const robot_interface_msgs::Simul
 
 void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandSingleArm"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	// check the input msg and call the knowledge base for information we need for simulation
 	//call the simulation service, wait for response and publish the result to the controller
@@ -1097,12 +1116,16 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 
 void robotCallback::SimulateApproachingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateApproachingCommandJointArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	cout<<"Not implemented yet, and probably not necessary totally"<<endl;
 
 
 };
 void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	if(msg.ResponsibleAgents.size()==1)
 		SimulateTransportingCommandSingleArm(msg);
 	else if (msg.ResponsibleAgents.size()==2)
@@ -1113,6 +1136,8 @@ void robotCallback::SimulateTransportingCommand(const robot_interface_msgs::Simu
 };
 void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandSingleArm"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 
 
 	//! parse the input command
@@ -1299,6 +1324,8 @@ void robotCallback::SimulateTransportingCommandSingleArm(const robot_interface_m
 
 void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_msgs::SimulationRequestMsg& msg){
 	cout<<BOLD(FBLU("robotCallback::SimulateTransportingCommandJointArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -1463,6 +1490,8 @@ void robotCallback::SimulateTransportingCommandJointArms(const robot_interface_m
 
 void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> initialJointPose, vector<float> goalPose,  bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
 	cout<<(FBLU("robotCallback::SimulateRobotSingleArm"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
 	simRobot_msgs::transformation simRobot_pose;
@@ -1514,6 +1543,7 @@ void robotCallback::SimulateServiceApproachSingleArm(int armIndex,vector<float> 
 
 void robotCallback::SimulateServiceTransportSingleArms(int armIndex, vector<float> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<float> &finalJointPose ){
 	cout<<(FBLU("robotCallback::SimulateServiceTransportSingleArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	//	bool simulationResult;
 		simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1563,6 +1593,7 @@ void robotCallback::SimulateServiceTransportSingleArms(int armIndex, vector<floa
 
 void robotCallback::SimulateServiceTransportJointArms(vector<int> armIndex, vector<vector<float>> initialJointPose, vector<float> wTo ,vector<float> wTg, bool &simulationResult, double &actionTime, vector<vector<float>> &finalJointPose ){
 	cout<<(FBLU("robotCallback::SimulateServiceTransportJointArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 //	bool simulationResult;
 	simRobot_msgs::simulateRobotSRV simRobot_srv;
@@ -1617,6 +1648,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	// MSG: "[action] [agents who should perform] [collaborators]"
 	// Example:  Approach-Point-11 LeftArm+RightArm Human
 	cout<<BOLD(FBLU("robotCallback::arrivingCommands"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	string input=input1-> data.c_str();
 	ROS_INFO("Arrived robot command: %s",input.c_str());
@@ -1745,6 +1777,7 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 
 void robotCallback::PublishRobotAck(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::PublishRobotAck"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	std_msgs::String ackMsg;
 	cout<<"Last assigned action: "<<agent.lastAssignedAction<<endl;
@@ -1794,6 +1827,7 @@ void robotCallback::SetAgentsList(){
 
 void robotCallback::SendGraspingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::sendGraspingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	agent.Print();
 
@@ -1811,6 +1845,7 @@ void robotCallback::SendGraspingCommand(agents_tasks& agent){
 };
 void robotCallback::SendHoldingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::sendHoldingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	control_msg.Activation=4;
 	control_msg.holdModeArm.arm=agent.agentsNumber;
@@ -1820,6 +1855,7 @@ void robotCallback::SendHoldingCommand(agents_tasks& agent){
 };
 void robotCallback::SendStoppingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::sendStoppingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	agent.Print();
 
@@ -1831,6 +1867,7 @@ void robotCallback::SendStoppingCommand(agents_tasks& agent){
 
 void robotCallback::SendApproachingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendApproachingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	if(agent.agentsNumber==0 || agent.agentsNumber==1)
 		SendApproachingCommandSingleArm(agent);
@@ -1843,6 +1880,7 @@ void robotCallback::SendApproachingCommand(agents_tasks& agent){
 };
 void robotCallback::SendTransportingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendTransportingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	if(agent.agentsNumber==0 || agent.agentsNumber==1)
 		SendTransportingCommandSingleArms(agent);
@@ -1854,6 +1892,7 @@ void robotCallback::SendTransportingCommand(agents_tasks& agent){
 
 void robotCallback::SendRestingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendRestingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -1928,6 +1967,7 @@ void robotCallback::SendRestingCommand(agents_tasks& agent){
 
 void robotCallback::SendScrewingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendScrewingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	agent.Print();
 
@@ -1993,6 +2033,7 @@ void robotCallback::SendScrewingCommand(agents_tasks& agent){
 };
 void robotCallback::SendUnscrewingCommand(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendUnscrewingCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	agent.Print();
 
@@ -2059,6 +2100,8 @@ void robotCallback::SendUnscrewingCommand(agents_tasks& agent){
 };
 
 void robotCallback::SendKB_ReductionCommand(agents_tasks& agent){
+	cout<<BOLD(FBLU("robotCallback::SendKB_ReductionCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 	std_msgs::String KBmsg;
 	KBmsg.data=agent.lastAssignedAction+ " "+to_string(agent.agentsNumber);
 	publishKBCommand.publish(KBmsg); // Reduce_WS 1 Reduce_cylinder 0 ...
@@ -2068,6 +2111,8 @@ void robotCallback::SendKB_ReductionCommand(agents_tasks& agent){
 
 void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendApproachingCommandSingleArm"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -2175,6 +2220,8 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 
 	cout<<BOLD(FBLU("robotCallback::SendTransportingCommandSingleArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -2269,6 +2316,8 @@ void robotCallback::SendTransportingCommandSingleArms(agents_tasks& agent){
 
 void robotCallback::SendTransportingCommandJointArms(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::SendTransportingCommandJointArms"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	/* 1- Parse the assigned action
 	   2- get from the knowledge base the necessary info
 	   3- base on the flag: find the path for the robot end effector
@@ -2431,6 +2480,8 @@ void robotCallback::FailureCheck(void){
 			if( (microSec_CurrentTime.count()-agents_list[i].microSec_StartingTime.count())/1000000.0 > waiting_time ) //value of time in micro seconds
 			{
 				cout<<"robotCallback::FailureCheck"<<endl;
+				cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 				cout<<"waiting time from last command: "<<(microSec_CurrentTime.count()-agents_list[i].microSec_StartingTime.count())/1000000.0<<endl;
 				agents_list[i].isBusy=false;
 				agents_list[i].isActionSuccessfullyDone=false;
@@ -2447,6 +2498,8 @@ void robotCallback::FailureCheck(void){
 
 void robotCallback::StopRobotEmergency(agents_tasks& agent){
 	cout<<BOLD(FBLU("robotCallback::StopRobotEmergency"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
 	vector<string> msgColleagues;
 
 	agent.isBusy=true;
