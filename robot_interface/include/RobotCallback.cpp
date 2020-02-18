@@ -1,6 +1,8 @@
 
 #include "RobotCallback.hpp"
+#include <math.h>       /* sin */
 
+#define PI 3.14159265
 robotCallback::robotCallback(int nosphere,int nocylinder,int noplane,int nocone,int nounknown):NoSphere(nosphere),NoCylinder(nocylinder),NoPlane(noplane),NoCone(nocone),NoUnknown(nounknown){
 
 //	RANSAC parameter Initialization
@@ -213,7 +215,8 @@ num_joint=7;
 	knowledgeBase_client	=nh.serviceClient<knowledge_msgs::knowledgeSRV>("knowledgeService");
 	publishControlCommand	=nh.advertise<controlCommnad_msgs::control>("robot_control_command",80);
 	publishKBCommand		=nh.advertise<std_msgs::String>("robot_KB_command",80);
-
+    publishKBkinect		=nh.advertise<std_msgs::String>("kinect_KB_command",80);
+    publishKBkinectupdate		=nh.advertise<std_msgs::String>("obj_status_update",20);
 
 	simRobot_client = nh.serviceClient<simRobot_msgs::simulateRobotSRV>("robotSimulator_service");
 	sub_arrivingSimulationCommand=nh.subscribe("simulation_command",10, &robotCallback::arrivingSimulationCommand, this);
@@ -628,6 +631,14 @@ void robotCallback::arrivingSimulationCommand(const robot_interface_msgs::Simula
 		SimulateUnscrewingCommand(msg);
 	else if(tempActionName=="Reduce")
 		SimulateKB_ReductionCommand(msg);
+	else if(tempActionName=="readqr")
+		SimulatereadingqrCommand(msg);
+	else if(tempActionName=="readiffaulty")
+		SimulateqrfaultyCommand(msg);
+	else if(tempActionName=="readifnonfaulty")
+		SimulateqrnonfaultyCommand(msg);
+	else if(tempActionName=="readifna")
+		SimulateqrnaCommand(msg);
 	else
 	{
 		cout<<"The arriving msg name is wrong: "<<tempActionName <<endl;
@@ -678,6 +689,30 @@ void robotCallback::SimulateGraspingCommand(const robot_interface_msgs::Simulati
 
 	tempResponseMsg.success=1;
 	tempResponseMsg.time=0.8;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
+void robotCallback::SimulatereadingqrCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulatereadingqrCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+
+	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+
+	tempResponseMsg.success=1;
+	tempResponseMsg.time=0.1;//sec
 	tempResponseMsg.ActionName=msg.ActionName;
 	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
 
@@ -1058,13 +1093,17 @@ void robotCallback::SimulateApproachingCommandSingleArm(const robot_interface_ms
 	for(int i=0;i<msg.ArmsJoint[agentNumber].values.size();i++)
 		initialJointPose.push_back(msg.ArmsJoint[agentNumber].values[i]);
 
-	SimulateServiceApproachSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
+	//SimulateServiceApproachSingleArm(agentNumber, initialJointPose , goalPose, simulationResult, actionTime, finalJointPose);
 
-
+    finalJointPose = initialJointPose;
 	robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
 
-	tempResponseMsg.success=simulationResult;
-	tempResponseMsg.time=actionTime;//sec
+//	tempResponseMsg.success=simulationResult;
+//	tempResponseMsg.time=actionTime;//sec
+//	tempResponseMsg.ActionName=msg.ActionName;
+
+	tempResponseMsg.success=true;
+	tempResponseMsg.time=2;//sec
 	tempResponseMsg.ActionName=msg.ActionName;
 
 	for(int i=0;i<msg.ResponsibleAgents.size();i++)
@@ -1765,6 +1804,22 @@ void robotCallback::arrivingCommands(const std_msgs::String::ConstPtr& input1){
 	{
 		SendKB_ReductionCommand(agents_list[agentNumber]);
 	}
+	else if(msgAction[0]=="readqr")
+	{
+		readqrstatus(agents_list[agentNumber]);
+	}
+	else if(msgAction[0]=="readiffaulty")
+	{
+		readqrfaulty(agents_list[agentNumber]);
+	}
+	else if(msgAction[0]=="readifnonfaulty")
+	{
+		readqrnonfaulty(agents_list[agentNumber]);
+	}
+	else if(msgAction[0]=="readifna")
+	{
+		readqrna(agents_list[agentNumber]);
+	}
 	else
 	{
 		cout<<"Error in arriving msg action:"<<msgAction[0]<<endl;
@@ -1821,6 +1876,38 @@ void robotCallback::SetAgentsList(){
 	agent3.agentsNumber=2;
 	agent3.collaborators.clear();
 	agents_list.push_back(agent3);
+
+};
+void robotCallback::readqrstatus(agents_tasks& agent){
+    cout<<BOLD(FBLU("robotCallback::readqrstatus"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+	agent.Print();
+	std_msgs::String msg2;
+    publishKBkinectupdate.publish(msg2);
+	int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+    std_msgs::String msg;
+    //publishKBkinectupdate.publish(msg2);
+	knowledge_msg.request.reqType="qr";
+    knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="status";
+    if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+        cout<<"size of status qr vector is "<<goalSize<<endl;
+        
+        if((int)knowledge_msg.response.pose.back()==0){msg.data="posboxa";}
+		
+        else if ((int)knowledge_msg.response.pose.back()==1){msg.data="posboxb";}
+        else if ((int)knowledge_msg.response.pose.back()==2){msg.data="poshumanhand";}
+	
+     }
+     publishKBkinect.publish(msg);
+     agent.isBusy=false;
+	agent.isActionSuccessfullyDone=true;
+	agent.emergencyFlag=false;
+	PublishRobotAck(agent);
+    
 
 };
 
@@ -1970,7 +2057,7 @@ void robotCallback::SendScrewingCommand(agents_tasks& agent){
 	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
 
 	agent.Print();
-
+   
 	//! parse the input command
 	vector<string> msgAction, msgParameters;
 	vector<float> goalPose;
@@ -2016,13 +2103,15 @@ void robotCallback::SendScrewingCommand(agents_tasks& agent){
 		exit(1);
 	}
 	goalPose[6]=3.0;
+	//goalPose[4]=-2.5;
 	cout<<"goalPose: ";
 	for (int i=0;i<goalSize;i++)
 	{
 			cout<<goalPose[i]<<" ";
 	}
 	cout<<endl;
-
+	     //double timebegin = ros::Time::now().toSec();
+         
 		control_msg.Activation=0;
 		control_msg.oneArm.armIndex=agent.agentsNumber;
 		control_msg.oneArm.armCmndType="jointPos";
@@ -2082,6 +2171,7 @@ void robotCallback::SendUnscrewingCommand(agents_tasks& agent){
 		exit(1);
 	}
 	goalPose[6]=-3.0;
+	//goalPose[3]=2.4;
 	cout<<"goalPose: ";
 	for (int i=0;i<goalSize;i++)
 	{
@@ -2143,6 +2233,7 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 	if(knowledgeBase_client.call(knowledge_msg)){
 
 		goalSize=knowledge_msg.response.pose.size();
+		cout <<"goal size is ****: "<<goalSize<<endl;
 
 		if(goalSize==6)
 			control_msg.oneArm.armCmndType="cartPos";
@@ -2210,9 +2301,9 @@ void robotCallback::SendApproachingCommandSingleArm(agents_tasks& agent){
 //	{
 		control_msg.Activation=0;
 		control_msg.oneArm.armIndex=agent.agentsNumber;
-		control_msg.oneArm.armCmndType="cartPos";
+		control_msg.oneArm.armCmndType="jointPos";
 		for(int i=0;i<goalSize;i++)
-		control_msg.oneArm.cartGoal.cartesianPosition[i]=goalPose[i];
+		control_msg.oneArm.cartGoal.jointPosition[i]=goalPose[i];
 		publishControlCommand.publish(control_msg);
 //	}
 };
@@ -2510,5 +2601,170 @@ void robotCallback::StopRobotEmergency(agents_tasks& agent){
 	SendStoppingCommand(agent);
 
 };
+void robotCallback::SimulateqrfaultyCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulatereadingqrCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+    std_msgs::String msg2;
+    publishKBkinectupdate.publish(msg2);
+	int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+    //std_msgs::String msg;
+    //publishKBkinectupdate.publish(msg2);
+    robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+	knowledge_msg.request.reqType="qr";
+    knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="status";
+    if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+        cout<<"size of status qr vector is "<<goalSize<<endl;
+        
+        if((int)knowledge_msg.response.pose.back()==0){tempResponseMsg.success=1;}
+		
+        else{tempResponseMsg.success=0;}
+        
+	
+     }
+
+	
+	tempResponseMsg.time=0.1;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
+void robotCallback::SimulateqrnonfaultyCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulatereadingqrCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+    std_msgs::String msg2;
+    publishKBkinectupdate.publish(msg2);
+	int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+   // std_msgs::String msg;
+    //publishKBkinectupdate.publish(msg2);
+    robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+	knowledge_msg.request.reqType="qr";
+    knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="status";
+    if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+        cout<<"size of status qr vector is "<<goalSize<<endl;
+        
+        if((int)knowledge_msg.response.pose.back()==1){tempResponseMsg.success=1;}
+		
+        else{tempResponseMsg.success=0;}
+        
+	
+     }
+
+	
+	tempResponseMsg.time=0.1;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
+void robotCallback::SimulateqrnaCommand(const robot_interface_msgs::SimulationRequestMsg& msg){
+	cout<<BOLD(FBLU("robotCallback::SimulatereadingqrCommand"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+    std_msgs::String msg2;
+    publishKBkinectupdate.publish(msg2);
+	int goalSize;
+	knowledge_msgs::knowledgeSRV knowledge_msg;
+   // std_msgs::String msg;
+    //publishKBkinectupdate.publish(msg2);
+    robot_interface_msgs::SimulationResponseMsg tempResponseMsg;
+	knowledge_msg.request.reqType="qr";
+    knowledge_msg.request.Name="";
+	knowledge_msg.request.requestInfo="status";
+    if(knowledgeBase_client.call(knowledge_msg)){
+
+		goalSize=knowledge_msg.response.pose.size();
+        cout<<"size of status qr vector is "<<goalSize<<endl;
+        
+        if((int)knowledge_msg.response.pose.back()==2){tempResponseMsg.success=1;}
+		
+        else{tempResponseMsg.success=0;}
+        
+	
+     }
+
+	
+	tempResponseMsg.time=0.1;//sec
+	tempResponseMsg.ActionName=msg.ActionName;
+	tempResponseMsg.ResponsibleAgents=msg.ResponsibleAgents;
+
+	robot_interface_msgs::Joints tempJoint;
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[0].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	tempJoint.values.clear();
+	for(int i=0;i<7;i++)
+	tempJoint.values.push_back(msg.ArmsJoint[1].values[i]);
+	tempResponseMsg.ArmsJoint.push_back(tempJoint);
+
+	pub_simulationResponse.publish(tempResponseMsg);
+
+};
 
 
+void robotCallback::readqrfaulty(agents_tasks& agent){
+    cout<<BOLD(FBLU("robotCallback::readqrstatus"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+	agent.Print();
+
+    agent.isBusy=false;
+	agent.isActionSuccessfullyDone=true;
+	agent.emergencyFlag=false;
+	PublishRobotAck(agent);
+    
+
+};
+void robotCallback::readqrnonfaulty(agents_tasks& agent){
+    cout<<BOLD(FBLU("robotCallback::readqrnonfaulty"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+	agent.Print();
+
+    agent.isBusy=false;
+	agent.isActionSuccessfullyDone=true;
+	agent.emergencyFlag=false;
+	PublishRobotAck(agent);
+    
+
+};
+void robotCallback::readqrna(agents_tasks& agent){
+    cout<<BOLD(FBLU("robotCallback::readqrna"))<<endl;
+	cout<<FBLU("Time: ")<<to_string(ros::Time::now().toSec())<<endl;
+	agent.Print();
+
+    agent.isBusy=false;
+	agent.isActionSuccessfullyDone=true;
+	agent.emergencyFlag=false;
+	PublishRobotAck(agent);
+    
+
+};

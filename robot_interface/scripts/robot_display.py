@@ -37,7 +37,10 @@ def signal_handler(signal, frame):
 def callback(data):
     rospy.loginfo("robot display: I heard %s",data.data)
     DataList = [str(x) for x in data.data.split(' ')][0:]
-    
+    if len(DataList)>1:
+    	pass
+    else:
+    	DataList=data.data
     font2=cv2.FONT_HERSHEY_PLAIN
     img2=np.copy( img)
     
@@ -54,6 +57,14 @@ def callback(data):
             cv2.putText(img2,DataList[0], (10,500), font2, 2,(0,0,255),4)
         else:
             cv2.putText(img2,DataList[0], (100,500), font2, 2,(0,0,255),2)
+    else:
+    	if(DataList=="not_faulty"):
+    		cv2.putText(img2,DataList, (100,500), font, 5,(255,255,255),10)
+    	elif(DataList=="NA"):
+    		cv2.putText(img2,DataList, (300,500), font, 10,(255,255,255),10)
+    	else:
+    		cv2.putText(img2,DataList, (100,500), font, 10,(255,255,255),10)
+
 
             
     msg = cv_bridge.CvBridge().cv2_to_imgmsg(img2, encoding="bgr8")
@@ -67,7 +78,7 @@ def main():
     pub=rospy.Publisher('/robot/xdisplay', Image_Sensor_Msg, latch=True , queue_size=10)
     Sub = rospy.Subscriber('robotDisplayText', String, callback)
     
-    path='/home/nasa/catkin_ws/src/ROBOT_INTERFACE/robot_interface/files/black_Background.png'
+    path='/home/hossein/catkin_ws/src/ROBOT_INTERFACE/robot_interface/files/black_Background.png'
     
     global img
     img = cv2.imread(path)    

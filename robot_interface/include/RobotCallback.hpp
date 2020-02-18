@@ -215,11 +215,17 @@ class robotCallback {
 		void SendScrewingCommand(agents_tasks& agent);
 		void SendUnscrewingCommand(agents_tasks& agent);
 		void SendKB_ReductionCommand(agents_tasks& agent);
+		void readqrstatus(agents_tasks& agent);
+		void readqrfaulty(agents_tasks& agent);
+		void readqrnonfaulty(agents_tasks& agent);
+		void readqrna(agents_tasks& agent);
+
 
 
 		//! Action Simulation Functions
 		void arrivingSimulationCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateGraspingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+		void SimulatereadingqrCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateJointValues(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUpdateKnowledgeBase(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateHoldingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
@@ -234,6 +240,10 @@ class robotCallback {
 		void SimulateScrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateUnscrewingCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
 		void SimulateKB_ReductionCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+        void SimulateqrfaultyCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+        void SimulateqrnonfaultyCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+        void SimulateqrnaCommand(const robot_interface_msgs::SimulationRequestMsg& msg);
+              
 
 
 		void SimulateServiceApproachSingleArm(int armIndex, vector<float> initialJointPose,vector<float> goalPose, bool &simulationResult, double &actionTime, vector<float> &finalJointPose );
@@ -274,7 +284,7 @@ class robotCallback {
 
 		ros::Publisher publishControlCommand;
 		ros::Publisher publishKBCommand;
-
+        ros::Publisher publishKBkinect,publishKBkinectupdate;
 
 		microseconds microSec_time;
 		double waiting_time;// seconds
